@@ -20,6 +20,7 @@ enablePrint()
 
 from moviepy.editor import *
 from speak import Speaker
+from track import Track
 
 
 
@@ -33,6 +34,9 @@ class ViewState(object):
         self.clock = clock
         self.running = True
         self.tts = tts
+        self.tracks = []
+        self.currentTrack = None
+        
         self.cmds = {
             "q" : self.quit,
             "t" : self.test,
@@ -40,7 +44,9 @@ class ViewState(object):
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
             "w" : lambda: self.shiftFocus((0, -1)),
-            "d" : lambda: self.shiftFocus((1,0))}
+            "d" : lambda: self.shiftFocus((1,0)),
+            "n" : self.newTrack,
+            "h" : self.whereAmI}
 
 
     def quit(self):
@@ -58,9 +64,46 @@ class ViewState(object):
 
     def shiftFocus(self, pos):
         (x, y) = pos
-        return ""
-        
+        if self.currentTrack is None:
+            return "No tracks. Please create a new track by hitting n."
 
+        if y != 0:
+            new = self.currentTrack+y
+            new = max(0, new)
+            self.currentTrack = min(len(self.tracks)-1, new)
+            print(str(self.currentTrack))
+
+
+        track = self.getCurrentTrack()
+        if not(track):
+            return ""
+
+        if x > 0:
+            track.right()
+        elif x < 0:
+            track.left()
+
+        return ""
+
+
+    def getCurrentTrack(self):
+        if self.currentTrack is None:
+            return None
+
+        return self.tracks[self.currentTrack]
+
+    def whereAmI(self):
+        w = "track " + str(self.currentTrack)
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Please create at least 1 track."
+        
+        w += "clip " + str(track.index)
+        return w
+
+    def newTrack(self):
+        self.tracks.append(Track())
+        self.currentTrack = len(self.tracks)-1
 
 def main(argv):
     (xres, yres) = (1024, 768)
