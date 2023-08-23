@@ -10,14 +10,14 @@ class Track(object):
         self.index = None
 
     def right(self):
-        if not(self.index):
+        if self.index is None:
             return
         
         if self.index+1 < len(self.data):
             self.index += 1
 
     def left(self):
-        if not(self.index):
+        if self.index is None:
             return
         
         if self.index-1 >= 0:
@@ -37,12 +37,16 @@ class Track(object):
 
     def insertFile(self, file):
         clip = VideoFileClip(file)
+        self.insertClip(clip)
+
+    def insertClip(self, clip):
         if self.empty():
             self.data = [clip]
             self.index = 0
             return
-        self.data = self.data[0:self.index] + [clip] + self.data[self.index+1:]
-
+        #        self.data = self.data[0:self.index] + [clip] + self.data[self.index+1:]
+        self.data.insert(self.index, clip)
+        self.right()
             
             
     

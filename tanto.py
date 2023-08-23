@@ -33,6 +33,10 @@ def getSeekPos(clip):
         return 0
     return clip.seekpos
 
+
+def setSeekPos(clip, pos):
+    clip.seekpos = pos
+    
 def getMark(clip):
     if not("mark" in clip.__dict__):
         return 0
@@ -74,6 +78,7 @@ class ViewState(object):
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
+            "c" : self.copyToHead,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
             "w" : lambda: self.shiftFocus((0, -1)),
@@ -121,6 +126,35 @@ class ViewState(object):
         return "Head is now at track " + track.getName()
 
 
+
+    def getCurrentSubclip(self):
+        # returns subclip between seekpos and mark
+        clip = self.getCurrentClip()
+        if clip is None:
+            return None
+
+        mark = getMark(clip)
+        pos = getSeekPos(clip)
+        sclip = clip.subclip(min(mark, pos), max(mark,pos))
+        # more intuitive to have mark and seekpos reset on new clip
+        setMark(sclip, 0)
+        setSeekPos(sclip, 0)
+        return sclip
+    
+        
+    
+    def copyToHead(self):
+        clip = self.getCurrentSubclip()
+        if clip is None:
+            return "No clip to copy!"
+        
+        track = self.head
+        if track is None:
+            "Head is not set!"
+
+        track.insertClip(clip)
+        return "Copied clip to track " + track.getName()
+
     def whereIsHead(self):
         if self.head is None:
             return "Head is not set."
@@ -145,19 +179,18 @@ class ViewState(object):
             new = self.currentTrack+y
             new = max(0, new)
             self.currentTrack = min(len(self.tracks)-1, new)
-            print(str(self.currentTrack))
+            return "track " + self.tracks[self.currentTrack].getName()
 
 
         track = self.getCurrentTrack()
-        if not(track):
+        if track is None:
             return ""
 
         if x > 0:
             track.right()
         elif x < 0:
             track.left()
-
-        return ""
+        return "clip " + str(track.index)
 
 
     def getCurrentTrack(self):
