@@ -2,7 +2,7 @@
 
 # Tanto - Terminal based Video and Audio editing tool
 
-import sys, os
+import sys, os, threading, multiprocessing
 
 # Disable print
 def blockPrint():
@@ -32,15 +32,26 @@ class ViewState(object):
     def __init__(self, tts=None, clock=None):
         self.debug = True
         self.clock = clock
+        self.audiothread = None
         self.running = True
         self.tts = tts
         self.tracks = []
         self.currentTrack = None
+        self.video_flag = threading.Event()
+        self.audio_flag = threading.Event()
+
         
+
+        testfile = "/home/marius/Videos/bghyperstream2.mkv"
+        self.newTrack()
+        track = self.getCurrentTrack()
+        track.insertFile(testfile)
+
         self.cmds = {
             "q" : self.quit,
             "t" : self.test,
             "ENTER" : self.activate,
+            "SPACE" : self.playPause,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
             "w" : lambda: self.shiftFocus((0, -1)),
@@ -97,14 +108,52 @@ class ViewState(object):
         track = self.getCurrentTrack()
         if track is None:
             return "Please create at least 1 track."
-        
+
         w += "clip " + str(track.index)
         return w
 
     def newTrack(self):
         self.tracks.append(Track())
         self.currentTrack = len(self.tracks)-1
+        return "Ok"
 
+
+    def playPause(self):
+        print("playpause")
+        # check if we're currently playing
+        if self.video_flag.is_set():
+            self.video_flag.clear()
+            return ""
+
+        
+        track = self.getCurrentTrack()
+        if not(track):
+            return "Nothing to play!"
+
+        clip = track.get()
+        if not(clip):
+            return "Track has no clip to play."
+
+        fps=15
+        audio_fps=22050
+        audio_buffersize=3000
+        audio_nbytes=2
+
+
+        audiothread = threading.Thread(
+            target=clip.audio.preview,
+            args=(audio_fps, audio_buffersize, audio_nbytes, self.audio_flag, self.video_flag),
+        )
+        audiothread.start()
+        self.video_flag.set()
+        
+        
+        
+        return ""
+    
+        
+            
+        
 def main(argv):
     (xres, yres) = (1024, 768)
 
@@ -123,6 +172,8 @@ def main(argv):
             if event.type == KEYDOWN:
                 if event.key == 13: #enter
                     f = st.cmds.get("ENTER", False)
+                elif event.key == K_SPACE:
+                    f = st.cmds.get("SPACE", False)                    
                 elif event.key == 9: # tab
                     f = st.cmds.get("TAB", False)
                 else:

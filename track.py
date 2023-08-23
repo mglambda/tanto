@@ -27,6 +27,9 @@ class Track(object):
         return self.index is None
 
     def get(self):
+        if self.index is None:
+            return None
+        
         return self.data[self.index]
 
     def insertFile(self, file):
