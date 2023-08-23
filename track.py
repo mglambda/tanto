@@ -8,6 +8,7 @@ class Track(object):
         self.name = name
         self.data = []
         self.index = None
+        self.fadeDuration = 1.0
 
     def right(self):
         if self.index is None:
@@ -74,12 +75,32 @@ class Track(object):
             return "new clip"
         return "clip " + str(self.index)
 
-    def concatenate(self):
+    def concatenate(self, fade=False):
         if self.empty():
             return None
     
-        # there's a bug in moviepy with audio fps, so we have to workaround
-        tmp = concatenate_videoclips(self.data)
+
+        if fade:
+            t = self.fadeDuration
+            c1 = self.data[0]
+            c1.audio = c1.audio.audio_fadeout(t)
+            c1 = c1.fadeout(t)
+            acc = [c1]
+            for clip in self.data[1:]:
+#                acc.append(clip)#.crossfadein(2))
+                cx = clip
+                cx.audio = cx.audio.audio_fadein(t)
+                cx.audio = cx.audio.audio_fadeout(t)
+                cx = cx.fadein(t)
+                cx = cx.fadeout(t)
+                acc.append(cx)
+                
+            #            tmp = concatenate(acc, padding=-2,method="compose")
+            tmp = concatenate_videoclips(acc)
+        else:
+            tmp = concatenate_videoclips(self.data)
+
+        # there's a bug in moviepy with audio fps, so we have to workaround        
         x = self.data[0].audio
         tmp.audio.fps = x.fps
         return tmp

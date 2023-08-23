@@ -67,7 +67,7 @@ class ViewState(object):
         track = self.getCurrentTrack()
         track.insertFile(testfile)
 
-        self.smallTimeStep = 1 # in seconds
+        self.smallTimeStep = 10 # in seconds
         self.largeTimeStep = 60 # in seconds
 
         
@@ -81,6 +81,7 @@ class ViewState(object):
             "X" : self.whereIsHead,
             "c" : self.copyToHead,
             "m" : self.mergeTrack,
+            "M" : lambda: self.mergeTrack(fade=True),
             "S" : self.saveClip,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -163,7 +164,7 @@ class ViewState(object):
         
         
 
-    def mergeTrack(self):
+    def mergeTrack(self, fade=False):
         sourceTrack = self.getCurrentTrack()
         if sourceTrack is None:
             return "No track."
@@ -176,7 +177,7 @@ class ViewState(object):
         if destinationTrack is None:
             return "Something went wrong. Couldn't create new track. Aborting merge."
 
-        destinationTrack.insertClip(sourceTrack.concatenate())
+        destinationTrack.insertClip(sourceTrack.concatenate(fade=fade))
         return "Ok. Merged clips onto track " + destinationTrack.getName()
 
         
