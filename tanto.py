@@ -28,6 +28,13 @@ from track import Track
 
 
 
+def getSeekPos(clip):
+    if not("seekpos" in clip.__dict__):
+        return 0
+    return clip.seekpos
+
+        
+
 class ViewState(object):
     def __init__(self, tts=None, clock=None):
         self.debug = True
@@ -47,6 +54,10 @@ class ViewState(object):
         track = self.getCurrentTrack()
         track.insertFile(testfile)
 
+        self.smallTimeStep = 1 # in seconds
+        self.largeTimeStep = 60 # in seconds
+
+        
         self.cmds = {
             "q" : self.quit,
             "t" : self.test,
@@ -57,7 +68,14 @@ class ViewState(object):
             "w" : lambda: self.shiftFocus((0, -1)),
             "d" : lambda: self.shiftFocus((1,0)),
             "n" : self.newTrack,
-            "h" : self.whereAmI}
+            "h" : self.whereAmI,
+            "f" : lambda: self.seekRelative(self.smallTimeStep),
+            "b" : lambda: self.seekRelative((-1)*self.smallTimeStep),
+            "F" : lambda: self.seekRelative(self.largeTimeStep),
+            "B" : lambda: self.seekRelative((-1)*self.largeTimeStep)}
+
+        for n in list(range(0,10)):
+            self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
 
 
     def quit(self):
@@ -118,22 +136,58 @@ class ViewState(object):
         return "Ok"
 
 
+    def getCurrentClip(self):
+        track = self.getCurrentTrack()
+        if track:
+            return track.get()
+        return None
+
+
+
+    def seekPercentage(self, p):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+
+        t = clip.duration * (p/100.0)
+        return self.seek(t)
+
+    def seekRelative(self, tstep):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+
+        t = getSeekPos(clip)
+        return self.seek(t+tstep) # FIXME: this won't work for non-second time signatures
+
+    def seek(self, t):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+
+        clip.seekpos = t
+        if self.isPlaying():
+            self.playPause()
+            self.playPause()
+            
+        return ""
+        
+
+    def isPlaying(self):
+        return self.video_flag.is_set()
+
     def playPause(self):
-        print("playpause")
         # check if we're currently playing
         if self.video_flag.is_set():
             self.video_flag.clear()
             return ""
-
         
-        track = self.getCurrentTrack()
-        if not(track):
-            return "Nothing to play!"
 
-        clip = track.get()
+        clip = self.getCurrentClip()
         if not(clip):
             return "Track has no clip to play."
 
+        clip = clip.subclip(getSeekPos(clip))
         fps=15
         audio_fps=22050
         audio_buffersize=3000
