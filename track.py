@@ -13,7 +13,7 @@ class Track(object):
         if self.index is None:
             return
         
-        if self.index+1 < len(self.data):
+        if self.index+1 <= len(self.data):
             self.index += 1
 
     def left(self):
@@ -23,17 +23,22 @@ class Track(object):
         if self.index-1 >= 0:
             self.index -= 1
 
+
     def getName(self):
         return self.name
             
     def empty(self):
-        return self.index is None
+        return len(self.data) == 0
 
     def get(self):
         if self.index is None:
             return None
-        
+
+        if self.index >= len(self.data):
+            return None
         return self.data[self.index]
+        
+
 
     def insertFile(self, file):
         clip = VideoFileClip(file)
@@ -49,4 +54,22 @@ class Track(object):
         self.right()
             
             
-    
+    def remove(self):
+        if (self.index is None) or (self.index >= len(self.data)):
+            return
+                         
+        del self.data[self.index]
+        self.left()
+        if self.empty():
+            self.index = None
+
+        print(str(self.index))
+        print(str(len(self.data)))              
+
+    def strIndex(self):
+        if self.index is None:
+            return "no clip"
+
+        if self.index >= len(self.data):
+            return "new clip"
+        return "clip " + str(self.index)

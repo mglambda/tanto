@@ -53,7 +53,8 @@ class ViewState(object):
         self.audiothread = None
         self.running = True
         self.tts = tts
-        self.tracks = []
+        self.graveyard = Track(name="graveyard")
+        self.tracks = [self.graveyard]
         self.head = None
         self.currentTrack = None
         self.video_flag = threading.Event()
@@ -79,6 +80,7 @@ class ViewState(object):
             "x" : self.setHead,
             "X" : self.whereIsHead,
             "c" : self.copyToHead,
+            "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
             "w" : lambda: self.shiftFocus((0, -1)),
@@ -142,6 +144,22 @@ class ViewState(object):
         return sclip
     
         
+
+
+    def removeClip(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "No track to remove clip from."
+
+        if track.empty():
+            return "Can't remove clip: No clips in track."
+
+        clip = track.get()
+        track.remove()
+        self.graveyard.insertClip(clip)
+        return "Ok. Clip moved to graveyard."
+        
+        
     
     def copyToHead(self):
         clip = self.getCurrentSubclip()
@@ -150,7 +168,7 @@ class ViewState(object):
         
         track = self.head
         if track is None:
-            "Head is not set!"
+            return "Head is not set!"
 
         track.insertClip(clip)
         return "Copied clip to track " + track.getName()
@@ -190,7 +208,7 @@ class ViewState(object):
             track.right()
         elif x < 0:
             track.left()
-        return "clip " + str(track.index)
+        return track.strIndex()
 
 
     def getCurrentTrack(self):
@@ -204,11 +222,11 @@ class ViewState(object):
         if track is None:
             return "Please create at least 1 track."
         w = "track " + track.getName()
+        w += " at " + track.strIndex()
         
         clip = self.getCurrentClip()
         if clip is None:
             return w
-        w += "clip " + str(track.index)
         w += " at position " + str(getSeekPos(clip))
         
         return w
@@ -253,8 +271,9 @@ class ViewState(object):
             self.playPause()
             time.sleep(0.1)
             self.playPause()
-            
-        return ""
+            return "" # don't interrupt playback
+        return "seek to " + str(t)
+
         
 
     def isPlaying(self):
@@ -271,7 +290,7 @@ class ViewState(object):
 
         clip = self.getCurrentClip()
         if not(clip):
-            return "Track has no clip to play."
+            return "No clip to play!"
 
         clip = clip.subclip(getSeekPos(clip))
         fps=15
