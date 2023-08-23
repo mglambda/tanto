@@ -47,7 +47,7 @@ class Track(object):
     def insertClip(self, clip):
         if self.empty():
             self.data = [clip]
-            self.index = 0
+            self.index = 1
             return
         #        self.data = self.data[0:self.index] + [clip] + self.data[self.index+1:]
         self.data.insert(self.index, clip)
@@ -73,3 +73,13 @@ class Track(object):
         if self.index >= len(self.data):
             return "new clip"
         return "clip " + str(self.index)
+
+    def concatenate(self):
+        if self.empty():
+            return None
+    
+        # there's a bug in moviepy with audio fps, so we have to workaround
+        tmp = concatenate_videoclips(self.data)
+        x = self.data[0].audio
+        tmp.audio.fps = x.fps
+        return tmp

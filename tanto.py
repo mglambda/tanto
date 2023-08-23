@@ -80,6 +80,8 @@ class ViewState(object):
             "x" : self.setHead,
             "X" : self.whereIsHead,
             "c" : self.copyToHead,
+            "m" : self.mergeTrack,
+            "S" : self.saveClip,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
@@ -160,6 +162,47 @@ class ViewState(object):
         return "Ok. Clip moved to graveyard."
         
         
+
+    def mergeTrack(self):
+        sourceTrack = self.getCurrentTrack()
+        if sourceTrack is None:
+            return "No track."
+
+        if sourceTrack.empty():
+            return "Track has no clips to merge."
+
+        self.newTrack()
+        destinationTrack = self.getCurrentTrack()
+        if destinationTrack is None:
+            return "Something went wrong. Couldn't create new track. Aborting merge."
+
+        destinationTrack.insertClip(sourceTrack.concatenate())
+        return "Ok. Merged clips onto track " + destinationTrack.getName()
+
+        
+        
+        
+
+    def saveClip(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip to save."
+
+        track = self.getCurrentTrack()
+        if track:
+            name = "track-" + track.getName() + "-" + track.strIndex()
+            name = name.replace(" ", "-")
+        else:
+            name = "unknown_clip"
+
+        extension = ".mkv"
+        clip.write_videofile(name+extension, codec="libx264")
+        return "Ok. Wrote file " + name+extension
+            
+
+
+        
+    
     
     def copyToHead(self):
         clip = self.getCurrentSubclip()
@@ -363,4 +406,5 @@ if __name__ == "__main__":
 
 
     
+
 
