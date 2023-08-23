@@ -23,6 +23,9 @@ class Track(object):
         if self.index-1 >= 0:
             self.index -= 1
 
+    def getName(self):
+        return self.name
+            
     def empty(self):
         return self.index is None
 
