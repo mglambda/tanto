@@ -328,13 +328,17 @@ class ViewState(object):
         if clip is None:
             return "No clip!"
 
-        clip.seekpos = t
+        if clip.duration > t:
+            clip.seekpos = t
+        else:
+            clip.seekpos = clip.end
+            
         if self.isPlaying():
             self.playPause()
             time.sleep(0.1)
             self.playPause()
             return "" # don't interrupt playback
-        return "seek to " + str(t)
+        return "seek to " + toTimecode(t)
 
         
 
@@ -354,6 +358,10 @@ class ViewState(object):
         if not(clip):
             return "No clip to play!"
 
+
+        if clip.seekpos >= clip.duration:
+            return "End of clip."
+        
         clip = clip.subclip(getSeekPos(clip))
         fps=15
         audio_fps=22050
