@@ -1,8 +1,10 @@
 
 
 from moviepy.editor import *
+from datetime import timedelta
 
-
+def toTimecode(seconds):
+    return str(timedelta(seconds=seconds))
 
 def getSeekPos(clip):
     if not("seekpos" in clip.__dict__):

@@ -49,9 +49,9 @@ class ViewState(object):
         
         self.cmds = {
             "q" : self.quit,
-            "t" : self.test,
             "ENTER" : self.setMark,
             "BACKSPACE" : self.jumpToMark,
+            "e" : self.setMarkEnd,
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
@@ -66,6 +66,7 @@ class ViewState(object):
             "d" : lambda: self.shiftFocus((1,0)),
             "n" : self.newTrack,
             "h" : self.whereAmI,
+            "t" : self.whereMark,
             "f" : lambda: self.seekRelative(self.smallTimeStep),
             "b" : lambda: self.seekRelative((-1)*self.smallTimeStep),
             "F" : lambda: self.seekRelative(self.largeTimeStep),
@@ -95,16 +96,31 @@ class ViewState(object):
 
 
 
-    def setMark(self):
+    def setMark(self, pos=None):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+        if not(pos):
+            pos = getSeekPos(clip)
+        setMark(clip, pos)
+        return "Mark set at " + toTimecode(getMark(clip))
+
+    def setMarkEnd(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+        return self.setMark(pos=clip.end)
+
+    def whereMark(self):
         clip = self.getCurrentClip()
         if clip is None:
             return "No clip!"
 
-        pos = getSeekPos(clip)
-        setMark(clip, pos)
-        return "Mark set at " + str(getMark(clip))
-
-
+        mark= getMark(clip)
+        seek = getSeekPos(clip)
+        return "seek at " + toTimecode(seek) + ", mark at " + toTimecode(mark)
+        
+    
     def jumpToMark(self):
         clip = self.getCurrentClip()
         if clip is None:
@@ -264,7 +280,7 @@ class ViewState(object):
         clip = self.getCurrentClip()
         if clip is None:
             return w
-        w += " at position " + str(getSeekPos(clip))
+        w += " at position " + toTimecode(getSeekPos(clip))
         if isAudioClip(clip):
             print(str(type(clip)))
             print(str(type(clip).__mro__))
