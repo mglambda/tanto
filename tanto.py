@@ -21,30 +21,9 @@ enablePrint()
 from moviepy.editor import *
 from speak import Speaker
 from track import Track
+from tanto_utility import *
 
 
-
-
-
-
-
-def getSeekPos(clip):
-    if not("seekpos" in clip.__dict__):
-        return 0
-    return clip.seekpos
-
-
-def setSeekPos(clip, pos):
-    clip.seekpos = pos
-    
-def getMark(clip):
-    if not("mark" in clip.__dict__):
-        return 0
-    return clip.mark
-
-def setMark(clip, mark):
-    clip.mark = mark
-        
 
 class ViewState(object):
     def __init__(self, tts=None, clock=None):
@@ -62,10 +41,7 @@ class ViewState(object):
 
         
 
-        testfile = "/home/marius/Videos/bghyperstream2.mkv"
-        self.newTrack()
-        track = self.getCurrentTrack()
-        track.insertFile(testfile)
+#        testfile = "/home/marius/Videos/bghyperstream2.mkv"
 
         self.smallTimeStep = 10 # in seconds
         self.largeTimeStep = 60 # in seconds
@@ -99,6 +75,20 @@ class ViewState(object):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
 
 
+    def loadFile(self, file):
+        ws = file.split("/")
+        if ws:
+            name = ws[-1][:6]
+            name.replace(" ", "-")
+        else:
+            name = "track " + str(len(self.tracks))
+            
+        self.newTrack(name=name, audioOnly=isAudioFile(file))
+        track = self.getCurrentTrack()
+        track.insertFile(file)
+        track.left()
+
+            
     def quit(self):
         self.running = False
         return "bye"
@@ -128,7 +118,7 @@ class ViewState(object):
         if track is None:
             return "No track selected."
         self.head = track
-        return "Head is now at track " + track.getName()
+        return "Head is now at " + track.getName()
 
 
 
@@ -172,13 +162,16 @@ class ViewState(object):
         if sourceTrack.empty():
             return "Track has no clips to merge."
 
+        if not(sourceTrack.isMergable()):
+            return "Tracks must contain only video clips, or only audio clips to be merged.This track seems to contain both."
+
         self.newTrack()
         destinationTrack = self.getCurrentTrack()
         if destinationTrack is None:
             return "Something went wrong. Couldn't create new track. Aborting merge."
 
         destinationTrack.insertClip(sourceTrack.concatenate(fade=fade))
-        return "Ok. Merged clips onto track " + destinationTrack.getName()
+        return "Ok. Merged clips onto " + destinationTrack.getName()
 
         
         
@@ -191,7 +184,7 @@ class ViewState(object):
 
         track = self.getCurrentTrack()
         if track:
-            name = "track-" + track.getName() + "-" + track.strIndex()
+            name =  track.getName() + "-" + track.strIndex()
             name = name.replace(" ", "-")
         else:
             name = "unknown_clip"
@@ -215,14 +208,14 @@ class ViewState(object):
             return "Head is not set!"
 
         track.insertClip(clip)
-        return "Copied clip to track " + track.getName()
+        return "Copied clip to " + track.getName()
 
     def whereIsHead(self):
         if self.head is None:
             return "Head is not set."
 
 
-        return "Head is set to track " + self.head.getName()
+        return "Head is set to " + self.head.getName()
 
     def test(self):
         clip = VideoFileClip("/home/marius/Videos/bghyperstream2.mkv")
@@ -241,7 +234,7 @@ class ViewState(object):
             new = self.currentTrack+y
             new = max(0, new)
             self.currentTrack = min(len(self.tracks)-1, new)
-            return "track " + self.tracks[self.currentTrack].getName()
+            return  self.tracks[self.currentTrack].getName()
 
 
         track = self.getCurrentTrack()
@@ -265,18 +258,27 @@ class ViewState(object):
         track = self.getCurrentTrack()
         if track is None:
             return "Please create at least 1 track."
-        w = "track " + track.getName()
+        w = track.getName()
         w += " at " + track.strIndex()
         
         clip = self.getCurrentClip()
         if clip is None:
             return w
         w += " at position " + str(getSeekPos(clip))
-        
+        if isAudioClip(clip):
+            print(str(type(clip)))
+            print(str(type(clip).__mro__))
+            w += " *audio*"
+        if isVideoClip(clip):
+            w += " *video*"
+            
         return w
 
-    def newTrack(self):
-        self.tracks.append(Track(name=str(len(self.tracks))))
+    def newTrack(self, name=None, audioOnly=False):
+        if name is None:
+            name = "track " + str(len(self.tracks))
+            
+        self.tracks.append(Track(name=name, audioOnly=audioOnly))
         self.currentTrack = len(self.tracks)-1
         return "Ok"
 
@@ -341,9 +343,11 @@ class ViewState(object):
         audio_fps=22050
         audio_buffersize=3000
         audio_nbytes=2
-
+        if isVideoClip(clip):
+            clip = clip.audio
+            
         audiothread = threading.Thread(
-            target=clip.audio.preview,
+            target=clip.preview, # important: this is clip.audio.preview for normal video clips
             args=(audio_fps, audio_buffersize, audio_nbytes, self.audio_flag, self.video_flag),
         )
         audiothread.start()
@@ -366,6 +370,8 @@ def main(argv):
     pygame.mixer.init(freq, -16, 2, buffer)    
     screen = pygame.display.set_mode((xres,yres))
     st = ViewState(tts=Speaker(), clock= pygame.time.Clock())
+    for file in argv[1:]:
+        st.loadFile(file)
     
     while st.running:
         time_delta = st.clock.tick(60)/1000.0

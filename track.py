@@ -1,15 +1,20 @@
 
 
 from moviepy.editor import *
+from tanto_utility import *
 
 class Track(object):
-    def __init__(self, file=None, name=None):
+    def __init__(self, file=None, name=None, audioOnly=False):
         self.file = file
         self.name = name
+        self.audioOnly = audioOnly
         self.data = []
         self.index = None
         self.fadeDuration = 1.0
 
+    def isAudioOnly(self):
+        return self.audioOnly
+        
     def right(self):
         if self.index is None:
             return
@@ -26,6 +31,8 @@ class Track(object):
 
 
     def getName(self):
+        if self.isAudioOnly():
+            return self.name + "-audio"
         return self.name
             
     def empty(self):
@@ -42,15 +49,23 @@ class Track(object):
 
 
     def insertFile(self, file):
-        clip = VideoFileClip(file)
-        self.insertClip(clip)
+        if isVideoFile(file):
+            if self.isAudioOnly():
+                return
+            clip = VideoFileClip(file)
+        else:
+            clip = AudioFileClip(file)
+        self.insertClip(clip)            
 
     def insertClip(self, clip):
+        if self.isAudioOnly():
+            if isVideoClip(clip):
+                return None
+        # else  video, currently allowwing all clips
         if self.empty():
             self.data = [clip]
             self.index = 1
             return
-        #        self.data = self.data[0:self.index] + [clip] + self.data[self.index+1:]
         self.data.insert(self.index, clip)
         self.right()
             
@@ -72,13 +87,25 @@ class Track(object):
             return "no clip"
 
         if self.index >= len(self.data):
-            return "new clip"
+            return "end of track"
         return "clip " + str(self.index)
 
+    def isMergable(self):
+        # a track is mergable if it's all video or all audio tracks. mixed tracks exist as containers and workspaces, like e.g. the graveyard track
+        videos = list(filter(isVideoClip, self.data))
+        audios = list(filter(isAudioClip, self.data))
+        return not(videos and audios)
+    
     def concatenate(self, fade=False):
+        if not(self.isMergable()):
+            return
+        
         if self.empty():
             return None
-    
+
+        # quick job for audio tracks
+        if self.isAudioOnly():
+            return concatenate_audioclips(self.data)
 
         if fade:
             t = self.fadeDuration
