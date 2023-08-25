@@ -54,4 +54,8 @@ def makeCompositeAudioClip(clips, offset=0):
     x = clips[0]
     tmp.fps = x.fps    
     return tmp
+
+def resetClipPositions(clip):
+    setSeekPos(clip, 0)
+    setMark(clip, 0)
     

@@ -56,6 +56,8 @@ class ViewState(object):
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
+            "v" : self.bisect,
+            "V" : lambda: self.bisect(inPlace=True),
             "c" : self.copyToHead,
             "m" : self.mergeTrack,
             "M" : lambda: self.mergeTrack(fade=True),
@@ -133,7 +135,44 @@ class ViewState(object):
 
         mark = getMark(clip)
         return self.seek(mark)
-    
+
+
+    def bisect(self, inPlace=False):
+        # cuts current clip at its mark, and creates a new track with 2 clips instead of one. Can also be called to cut-inplace, modfying the current track
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Cannot cut here: No clip!"
+
+        mark = getMark(clip)
+        if mark == 0 or mark >= clip.end:
+            return "Nonsense mark position, nothing cut."
+
+        a = clip.subclip(0, mark)
+        b = clip.subclip(mark)
+        resetClipPositions(a)
+        resetClipPositions(b)
+        
+        track = self.getCurrentTrack()
+        if inPlace:
+            newTrack = track
+        else:
+            newTrack = self.makeCloneTrack(track)
+
+        newTrack.insertClip(a)
+        newTrack.insertClip(b)
+        newTrack.remove()
+        if not(inPlace):
+            self.tracks.append(newTrack)
+        w = "Ok. cut clip onto "
+        if not(inPlace):
+            w += "new track "
+        return w + newTrack.getName()
+            
+                
+            
+            
+            
+        
     def setHead(self):
         track = self.getCurrentTrack()
         if track is None:
