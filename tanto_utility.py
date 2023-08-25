@@ -38,3 +38,17 @@ def isAudioFile(filename):
 
 def isVideoFile(filename):
     return not(isAudioFile(filename))
+
+
+
+
+def makeCompositeAudioClip(clips):
+        # there's a bug in moviepy with audio fps, so we have to workaround
+    if not(clips):
+        return None
+
+    tmp = CompositeAudioClip(clips)
+    x = clips[0]
+    tmp.fps = x.fps    
+    return tmp
+    

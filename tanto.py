@@ -58,6 +58,7 @@ class ViewState(object):
             "c" : self.copyToHead,
             "m" : self.mergeTrack,
             "M" : lambda: self.mergeTrack(fade=True),
+            "#" : self.mixAudio,
             "S" : self.saveClip,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -134,9 +135,26 @@ class ViewState(object):
         if track is None:
             return "No track selected."
         self.head = track
-        return "Head is now at " + track.getName()
+        return "Head is now at " + self.strHead()
 
 
+    def strHead(self):
+        if self.head is None:
+            return "none"
+
+        return self.head.getName() + " at " + self.head.strIndex()
+
+        
+
+    
+    def getHeadClip(self):
+        if self.head is None:
+            return None
+
+        return self.head.get()
+        
+        
+    
 
     def getCurrentSubclip(self):
         # returns subclip between seekpos and mark
@@ -167,6 +185,51 @@ class ViewState(object):
         track.remove()
         self.graveyard.insertClip(clip)
         return "Ok. Clip moved to graveyard."
+        
+
+    def mixAudio(self, inPlace=False):
+        # get the audio from subclip between mark and seekpos, and mix it into the audio of the clip at HEAD
+        # if the mixed-in audio clip is longer than clip at head, it is cropped
+        source = self.getCurrentSubclip()
+        if source is None:
+            return "No clip to mix audio from."
+
+        track = self.head
+        if track is None:
+            return "Cannot mix audio. Head is not set."
+
+        target = track.get()
+        if target is None:
+            return "No clip to mix audio into."
+
+        if source == target:
+            return "Mixing audio of a clip into itself is not suported yet."
+        
+        if isAudioClip(source):
+            audioSource = source
+        else:
+            audioSource = source.audio
+
+        if isAudioClip(target):
+            audioTarget = target
+        else:
+            audioTarget = target.audio
+
+        newAudio = makeCompositeAudioClip([audioTarget, audioSource])
+        newTrack = track.clone()
+        newTrack.name = str(len(self.tracks)) + " from " + track.name
+        newTarget = newTrack.get()
+        if isAudioClip(newTarget):
+            newTarget = newAudio
+        else:
+            newTarget.audio = newAudio
+
+        self.tracks.append(newTrack)
+        return "Ok. Mixed in audio onto new track."
+        
+                
+
+
         
         
 
@@ -231,7 +294,7 @@ class ViewState(object):
             return "Head is not set."
 
 
-        return "Head is set to " + self.head.getName()
+        return "Head is set to " + self.strHead()
 
     def test(self):
         clip = VideoFileClip("/home/marius/Videos/bghyperstream2.mkv")
@@ -359,7 +422,7 @@ class ViewState(object):
             return "No clip to play!"
 
 
-        if clip.seekpos >= clip.duration:
+        if getSeekPos(clip) >= clip.duration:
             return "End of clip."
         
         clip = clip.subclip(getSeekPos(clip))

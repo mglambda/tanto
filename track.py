@@ -2,6 +2,7 @@
 
 from moviepy.editor import *
 from tanto_utility import *
+import copy
 
 class Track(object):
     def __init__(self, file=None, name=None, audioOnly=False):
@@ -46,6 +47,11 @@ class Track(object):
             return None
         return self.data[self.index]
         
+    def atEnd(self):
+        if self.index is None:
+            return True
+        else:
+            return self.index >= len(self.data)
 
 
     def insertFile(self, file):
@@ -86,7 +92,7 @@ class Track(object):
         if self.index is None:
             return "no clip"
 
-        if self.index >= len(self.data):
+        if self.atEnd():
             return "end of track"
         return "clip " + str(self.index)
 
@@ -131,3 +137,14 @@ class Track(object):
         x = self.data[0].audio
         tmp.audio.fps = x.fps
         return tmp
+
+
+    def clone(self):
+        n = copy.copy(self)
+        n.data = []
+        for clip in self.data:
+            n.data.append(clip.subclip(0))
+        return n
+
+            
+            
