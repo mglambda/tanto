@@ -58,7 +58,8 @@ class ViewState(object):
             "c" : self.copyToHead,
             "m" : self.mergeTrack,
             "M" : lambda: self.mergeTrack(fade=True),
-            "#" : self.mixAudio,
+            "p" : self.mixAudio,
+            "P" : lambda: self.mixAudio(inPlace=True),            
             "S" : self.saveClip,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -142,7 +143,14 @@ class ViewState(object):
         if self.head is None:
             return "none"
 
-        return self.head.getName() + " at " + self.head.strIndex()
+        w = self.head.getName() + " at " + self.head.strIndex()
+        clip = self.head.get()
+        if clip is None:
+            return w
+
+        if getMark(clip) == 0:
+            return w
+        return w + " with mark at " + toTimecode(getMark(clip))
 
         
 
@@ -215,24 +223,40 @@ class ViewState(object):
         else:
             audioTarget = target.audio
 
-        newAudio = makeCompositeAudioClip([audioTarget, audioSource])
-        newTrack = track.clone()
-        newTrack.name = str(len(self.tracks)) + " from " + track.name
+        newAudio = makeCompositeAudioClip([audioTarget, audioSource], offset=getMark(target))
+        if inPlace:
+            newTrack = track
+        else:
+            newTrack = self.makeCloneTrack(track)
+
+
         newTarget = newTrack.get()
         if isAudioClip(newTarget):
-            newTarget = newAudio
+            newTrack.data[newTrack.index] = newAudio
         else:
             newTarget.audio = newAudio
 
-        self.tracks.append(newTrack)
-        return "Ok. Mixed in audio onto new track."
+        if not(inPlace):
+            self.tracks.append(newTrack)
+        w = "Ok. Mixed in audio track onto "
+        if not(inPlace):
+            w+= "new track "
+        return w + newTrack.getName()
         
                 
 
 
         
-        
 
+    def makeCloneTrack(self, track):
+        newTrack = track.clone()
+        newTrack.name = self.makeCloneTrackName(track)
+        return newTrack
+
+
+    def makeCloneTrackName(self, track):
+        return str(len(self.tracks)) + " from " + track.name
+    
     def mergeTrack(self, fade=False):
         sourceTrack = self.getCurrentTrack()
         if sourceTrack is None:
@@ -249,6 +273,7 @@ class ViewState(object):
         if destinationTrack is None:
             return "Something went wrong. Couldn't create new track. Aborting merge."
 
+        destinationTrack.name = self.makeCloneTrackName(sourceTrack)
         destinationTrack.insertClip(sourceTrack.concatenate(fade=fade))
         return "Ok. Merged clips onto " + destinationTrack.getName()
 

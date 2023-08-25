@@ -42,11 +42,14 @@ def isVideoFile(filename):
 
 
 
-def makeCompositeAudioClip(clips):
+def makeCompositeAudioClip(clips, offset=0):
         # there's a bug in moviepy with audio fps, so we have to workaround
     if not(clips):
         return None
 
+    for i in range(1, len(clips)):
+        clips[i] = clips[i].set_start(offset)
+    
     tmp = CompositeAudioClip(clips)
     x = clips[0]
     tmp.fps = x.fps    
