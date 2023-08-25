@@ -45,6 +45,7 @@ class ViewState(object):
 
         self.smallTimeStep = 10 # in seconds
         self.largeTimeStep = 60 # in seconds
+        self.volumeStep = 0.1
 
         
         self.cmds = {
@@ -59,7 +60,9 @@ class ViewState(object):
             "m" : self.mergeTrack,
             "M" : lambda: self.mergeTrack(fade=True),
             "p" : self.mixAudio,
-            "P" : lambda: self.mixAudio(inPlace=True),            
+            "P" : lambda: self.mixAudio(inPlace=True),
+            "+" : lambda: self.changeVolume(self.volumeStep),
+            "-" : lambda: self.changeVolume((-1) * self.volumeStep),
             "S" : self.saveClip,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -164,20 +167,28 @@ class ViewState(object):
         
     
 
-    def getCurrentSubclip(self):
-        # returns subclip between seekpos and mark
+    def getCurrentTrisection(self):
+        # returns subclip between seekpos and mark, as well as preclip and afterclip
         clip = self.getCurrentClip()
         if clip is None:
-            return None
+            return (None, None, None)
 
         mark = getMark(clip)
         pos = getSeekPos(clip)
-        sclip = clip.subclip(min(mark, pos), max(mark,pos))
+        begin = min(mark, pos)
+        end = max(mark,pos)
+        preclip = clip.subclip(0, begin)
+        sclip = clip.subclip(begin, end)
+        afterclip = clip.subclip(end)
+        return (preclip, sclip, afterclip)
+
+
+    def getCurrentSubclip(self):
+        sclip = self.getCurrentTrisection()[1]
         # more intuitive to have mark and seekpos reset on new clip
         setMark(sclip, 0)
         setSeekPos(sclip, 0)
         return sclip
-    
         
 
 
@@ -301,6 +312,44 @@ class ViewState(object):
 
         
     
+
+    def changeVolume(self, step):
+        factor = 1.0 + step
+
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Cannot change volume: no clip."
+
+        mark = getMark(clip)
+        if mark == 0:
+            self.setCurrentClip(clip.volumex(factor))
+            return "Ok. Changed volume by " + str(step)
+
+        (preclip, sclip, afterclip) = self.getCurrentTrisection()
+        sclip = sclip.volumex(factor)
+        tmp = Track()
+        tmp.insertClip(preclip)
+        tmp.insertClip(sclip)
+        tmp.insertClip(afterclip)
+        newClip = tmp.concatenate()
+        if newClip is None:
+            return "Oops. Couldn't change volume due to unknown error."
+        setSeekPos(newClip, getSeekPos(clip))
+        setMark(newClip, mark)
+        #FIXME: this sometimes introduces an audioble clicking noise or other artefacts. not sure why
+        self.setCurrentClip(newClip)
+        return "Ok, changed volume of clip section by " + str(step)
+        
+
+        
+
+        
+
+
+        
+            
+        
+        
     
     def copyToHead(self):
         clip = self.getCurrentSubclip()
@@ -392,6 +441,20 @@ class ViewState(object):
         if track:
             return track.get()
         return None
+
+    def setCurrentClip(self, clip):
+        track = self.getCurrentTrack()
+        if track is None:
+            return
+
+        if track.empty():
+            return
+
+        if track.get() is None:
+            return
+
+        track.data[track.index] = clip
+        
 
 
 
