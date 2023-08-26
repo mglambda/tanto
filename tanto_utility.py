@@ -3,6 +3,7 @@
 from moviepy.editor import *
 from datetime import timedelta
 import random
+import subprocess
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
@@ -183,3 +184,34 @@ def sideTrackName(name):
     (number, nato, rest) = getNamePrefixes(name)
     return makeNatoName(nextNumber(number), nato, rest)
             
+
+
+TTS_TEMP_FILE = ".tts.tmp.wav"
+
+def getTTSProgram():
+    voxin = "voxin-say"
+    try:
+        subprocess.run(voxin)
+    except FileNotFoundError:
+        return None
+    return "voxin-say"
+
+def runTTSProgram(prog, w):
+    if prog == "voxin-say":
+        r = subprocess.run([prog, "-w", TTS_TEMP_FILE, '"' + w + '"'])
+        return r
+    return None
+
+def makeVoiceClip(w):
+    prog = getTTSProgram()
+    if not(prog):
+        return None
+
+    r = runTTSProgram(prog, w)
+    if not(r):
+        return None
+    clip = AudioFileClip(TTS_TEMP_FILE)
+    os.remove(TTS_TEMP_FILE)
+    return clip
+    
+

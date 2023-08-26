@@ -14,6 +14,7 @@ def enablePrint():
 
 
 blockPrint()
+import pygame_textinput
 import pygame
 from pygame.locals import *
 enablePrint()
@@ -26,8 +27,9 @@ from tanto_utility import *
 
 
 class ViewState(object):
-    def __init__(self, tts=None, projectdir="./"):
+    def __init__(self, tts=None, projectdir="./", textinput=None):
         self.debug = True
+        self.textinput = textinput
         self.projectdir = projectdir
         self.running = True
         self.tts = tts
@@ -48,13 +50,18 @@ class ViewState(object):
 
         if self.projectdir:
             self.loadDir(self.projectdir)
-        
+
+
+            self.textmode = False
+            self.defaultTextHandler = lambda w: True
+            self.handleText = self.defaultTextHandler
         self.cmds = {
             "q" : self.quit,
             "Q" : self.save,
             "ENTER" : self.setMark,
             "BACKSPACE" : self.jumpToMark,
             "e" : self.setMarkEnd,
+            '"' : self.createVoiceClip,
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
@@ -435,6 +442,38 @@ class ViewState(object):
             
         
         
+
+    def createVoiceClip(self):
+        # get text input, then, make a voice over wav file, and add it to the current head position
+        if self.head:
+            track = self.head
+        else:
+            self.newTrack()
+            track = self.getCurrentTrack()
+
+        def handleVoiceMessage(w):
+            clip = makeVoiceClip(w)
+            track.insertClip(clip)
+            self.cancelTextMode()
+            return True #delete text
+
+        self.enableTextMode(handleVoiceMessage)
+        return "Enter the message to be spoken. Enter to submit, escape to cancel."
+
+
+        
+    def isTextMode(self):
+        return self.textmode
+
+    def cancelTextMode(self):
+        self.handleText = self.defaultTextHandler
+        self.textinput.value = ""
+        self.textmode = False
+
+    def enableTextMode(self, handler):
+        self.handleText = handler
+        self.textinput.value = ""
+        self.textmode = True
     
     def copyToHead(self):
         clip = self.getCurrentSubclip()
@@ -660,18 +699,31 @@ def main(argv):
     pygame.mixer.init(freq, -16, 2, buffer)    
     screen = pygame.display.set_mode((xres,yres))
     clock = pygame.time.Clock()
+    textinput = pygame_textinput.TextInputVisualizer()    
     projectdir = None    
     if len(argv) == 2:
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 
-    st = ViewState(tts=Speaker(), projectdir=projectdir)
+    st = ViewState(tts=Speaker(), projectdir=projectdir, textinput=textinput)
     
     while st.running:
         time_delta = clock.tick(60)/1000.0
-
-        for event in pygame.event.get():
+        events = pygame.event.get()
+        textinput.update(events)
+        screen.blit(textinput.surface, (10, yres-20))        
+        for event in events:
             if event.type == KEYDOWN:
+                if st.isTextMode():
+                    st.tts.speak(textinput.value)
+                    if event.key == 13: # enter
+                        deleteText = st.handleText(textinput.value)
+                        if deleteText:
+                            textinput.value = ""
+                    elif event.key == K_ESCAPE:
+                        st.cancelTextMode()
+                    continue
+
                 if event.key == 13: #enter
                     f = st.cmds.get("ENTER", False)
                 elif event.key == K_SPACE:
@@ -686,6 +738,8 @@ def main(argv):
                     msg = f()
                     if msg:
                         st.tts.speak(msg)
+                        if not(st.isTextMode()):
+                            textinput.value = msg
 
             if event.type == QUIT:
                 st.quit()
