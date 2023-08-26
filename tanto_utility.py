@@ -231,3 +231,7 @@ def makeSilenceClip(duration):
     clip = AudioFileClip(TEMP_WAV_FILE)
     os.remove(TEMP_WAV_FILE)
     return clip
+
+
+def isFloat(w):
+    return w.replace(".", "0").replace("-","0").isdigit()

@@ -63,6 +63,7 @@ class ViewState(object):
             "e" : self.setMarkEnd,
             '"' : self.createVoiceClip,
             "!" : self.createSilenceClip,
+            "=" : self.setVolume,
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
@@ -444,16 +445,30 @@ class ViewState(object):
         
 
 
-    def createSilenceClip(self):
-        if self.head:
-            track = self.head
-        else:
-            self.newTrack()
-            track = self.getCurrentTrack()
+    def setVolume(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Sorry, must be on a clip to set its volume."
 
-        def handleSilenceDurationText(w):
-            if not(w.isdigit()):
-                self.tts.speak("Sorry, invalid input. Please specify the silence duration in seconds.")
+
+        def cont(p):
+            if p < 0.0:
+                self.tts.speak("Can't set volume to negative number. Please specify a positive decimal number, like 0.2 or 3.1")
+                return False
+
+            self.setCurrentClip(clip.volumex(p))
+            self.cancelTextMode()
+            self.tts.speak("Ok. scaled volume to " + str(p) + " times its original value.")
+            return True
+        
+        self.enableTextMode(self.makeFloatHandler(cont))
+        return "Please specify a volume multiplier as a decimal. 1.0 means no change, 0.0 is silence, 1.2 increases volume by 20%."
+
+
+    def makeFloatHandler(self, cont):
+        def h(w):
+            if not(isFloat(w)):
+                self.tts.speak("Sorry, invalid input. Please specify a valid number.")
                 return False
 
             try:
@@ -462,16 +477,28 @@ class ViewState(object):
                 self.tts.speak("Sorry, invalid input. Please specify the silence duration in seconds.")
                 return False            
 
+            return cont(n)
+        return h
+
+    
+    def createSilenceClip(self):
+        if self.head:
+            track = self.head
+        else:
+            self.newTrack()
+            track = self.getCurrentTrack()
+
+        def cont(n):
             if n <= 0:
                 self.tts.speak("Please enter a positive, non-zero value.")
                 return False
-            
+
             track.insertClip(makeSilenceClip(n))
             self.tts.speak("Ok. Created " + str(n) + " seconds of silence at head position.")
             self.cancelTextMode()
             return True
 
-        self.enableTextMode(handleSilenceDurationText)
+        self.enableTextMode(self.makeFloatHandler(cont))
         return "Please enter the duration of silence in seconds. Enter to confirm, escape to cancel."
             
     def createVoiceClip(self):
