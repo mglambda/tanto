@@ -70,6 +70,8 @@ def makeCompositeAudioClip(clips, offset=0):
 def resetClipPositions(clip):
     setSeekPos(clip, 0)
     setMark(clip, 0)
+    return clip
+
     
 
 

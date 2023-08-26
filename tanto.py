@@ -40,10 +40,7 @@ class ViewState(object):
         self.video_flag = threading.Event()
         self.audio_flag = threading.Event()
 
-        
-
-#        testfile = "/home/marius/Videos/bghyperstream2.mkv"
-
+        self.quietFactor = 0.2
         self.smallTimeStep = 1 # in seconds
         self.largeTimeStep = 60 # in seconds
         self.volumeStep = 0.1
@@ -63,6 +60,7 @@ class ViewState(object):
             "e" : self.setMarkEnd,
             '"' : self.createVoiceClip,
             "!" : self.createSilenceClip,
+            "§" : self.createVoiceOver,
             ";" : self.renameTrack,
             "=" : self.setVolume,
             "SPACE" : self.playPause,
@@ -461,7 +459,7 @@ class ViewState(object):
             return True
 
         self.enableTextMode(handle)
-#        self.textinput.value = track.name                    
+        #        self.textinput.value = track.name                    
         return "Please enter a new name for the track. Enter to confirm, escape to exit."
             
         
@@ -501,7 +499,55 @@ class ViewState(object):
             return cont(n)
         return h
 
-    
+
+    def createVoiceOver(self):
+        # enter a text and it is spoken and mixed into the current clip, at the mark position, while quieting the clip it is mixed into
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Sorry, please select a track or create one."
+        
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Sorry, no clip!"
+
+        if isAudioClip(clip):
+            return "Sorry, direct voice over for audio clips is currently not supported."
+
+
+        mark = getMark(clip)
+        
+        def handle(w):
+            if not(w):
+                self.tts.speak("Please enter some text for the voice over.")
+                return False
+
+
+            voice = makeVoiceClip(w)
+            duration = voice.duration
+            if duration >= (clip.duration - mark):
+                self.tts.speak("Message is too long for the clip!")
+                return False
+            begin = resetClipPositions(clip.subclip(0, mark))
+            middle = resetClipPositions(clip.subclip(mark, mark+duration))
+            end = resetClipPositions(clip.subclip(mark+duration, clip.end))
+            # FIXME: this currently will crash on pure audio clips, but voice over is mostly used for video anyway
+            middle = middle.volumex(self.quietFactor)
+            middle.audio = makeCompositeAudioClip([middle.audio, voice])
+            tmp = Track()
+            tmp.insertClip(begin)
+            tmp.insertClip(middle)
+            tmp.insertClip(end)
+            self.newTrack()
+            nt = self.getCurrentTrack()
+            nt.name = self.makeSubTrackName(track)
+            nt.insertClip(tmp.concatenate())
+
+            self.tts.speak("Ok. Inserted voice over at mark and copied to new track " + nt.getName() + ".")
+            self.cancelTextMode()
+            return True
+
+        self.enableTextMode(handle)
+        return "Please enter a text for the voice over."
     def createSilenceClip(self):
         if self.head:
             track = self.head
