@@ -4,6 +4,7 @@ from moviepy.editor import *
 from datetime import timedelta
 import random
 import subprocess
+import wave
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
@@ -214,4 +215,19 @@ def makeVoiceClip(w):
     os.remove(TTS_TEMP_FILE)
     return clip
     
+TEMP_WAV_FILE = ".tmp.wav"
+def makeSilenceClip(duration):
+    # Open a (new if necessary) wave file for binary writing
+    outf = wave.open(TEMP_WAV_FILE, "wb")
+    framerate = 48000
+    bytesperframe = 2 # 2 -> 16 bit
+    outf.setframerate(48000)
+    outf.setnchannels(1)
+    outf.setnframes(int(duration * framerate))
+    outf.setsampwidth(bytesperframe)
+    outf.writeframes(bytes(0 for i in range(int(duration * framerate) * bytesperframe)))
 
+
+    clip = AudioFileClip(TEMP_WAV_FILE)
+    os.remove(TEMP_WAV_FILE)
+    return clip

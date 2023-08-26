@@ -62,6 +62,7 @@ class ViewState(object):
             "BACKSPACE" : self.jumpToMark,
             "e" : self.setMarkEnd,
             '"' : self.createVoiceClip,
+            "!" : self.createSilenceClip,
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
@@ -441,8 +442,38 @@ class ViewState(object):
         
             
         
-        
 
+
+    def createSilenceClip(self):
+        if self.head:
+            track = self.head
+        else:
+            self.newTrack()
+            track = self.getCurrentTrack()
+
+        def handleSilenceDurationText(w):
+            if not(w.isdigit()):
+                self.tts.speak("Sorry, invalid input. Please specify the silence duration in seconds.")
+                return False
+
+            try:
+                n = float(w)
+            except:
+                self.tts.speak("Sorry, invalid input. Please specify the silence duration in seconds.")
+                return False            
+
+            if n <= 0:
+                self.tts.speak("Please enter a positive, non-zero value.")
+                return False
+            
+            track.insertClip(makeSilenceClip(n))
+            self.tts.speak("Ok. Created " + str(n) + " seconds of silence at head position.")
+            self.cancelTextMode()
+            return True
+
+        self.enableTextMode(handleSilenceDurationText)
+        return "Please enter the duration of silence in seconds. Enter to confirm, escape to cancel."
+            
     def createVoiceClip(self):
         # get text input, then, make a voice over wav file, and add it to the current head position
         if self.head:
