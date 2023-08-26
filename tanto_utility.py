@@ -2,6 +2,7 @@
 
 from moviepy.editor import *
 from datetime import timedelta
+import random
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
@@ -106,3 +107,79 @@ def writeClip(clip, file):
         
 
         
+
+
+nato_alphabet = "Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliett, Kilo, Lima, Mike, November, Oscar, Papa, Quebec, Romeo, Sierra, Tango, Uniform, Victor, Whiskey, X-ray, Yankee, Zulu".lower().split(", ")
+name_delim = "-"
+
+
+def natoPrefixForLetter(w):
+    if w == "":
+        return ""
+
+    for v in nato_alphabet:
+        if w[0].lower() == v[0]:
+            return v
+
+    return nato_alphabet[-1]
+        
+
+def getNamePrefixes(w):
+    number = ""
+    nato = ""
+    rest = w
+    ws = w.split(name_delim)
+    if len(ws) >= 3:
+        if ws[0].isdigit():
+            number = ws[0]
+            
+        if ws[1] in nato_alphabet:
+            nato = ws[1]
+
+        rest = name_delim.join(ws[2:])
+    elif len(ws) == 2:
+        if ws[0].isdigit():
+            number = ws[0]
+            rest = ws[1]
+        elif ws[0] in nato_alphabet:
+            nato = ws[0]
+            rest = ws[1]
+
+
+    return (number, nato, rest)
+
+def makeNatoName(number, nato, rest):
+    ws = [number, nato, rest]
+    vs = list(filter(bool, ws))
+    return name_delim.join(vs)
+
+def nextNumber(numberstring):
+    if numberstring.isdigit():
+        try:
+            n = int(numberstring)
+        except:
+            return "0"
+        return str(n+1)
+    return "0"
+
+def next_alpha(s):
+    return chr((ord(s.upper())+1 - 65) % 26 + 65)
+
+
+def nextNato(natostring):
+    if not(natostring):
+        return randomNato()
+    c = natostring[0]    
+    return natoPrefixForLetter(next_alpha(c))
+
+def randomNato():
+    return random.choice(nato_alphabet)
+    
+def subTrackName(name):
+    (number, nato, rest) = getNamePrefixes(name)
+    return makeNatoName(number, nextNato(nato), rest)
+
+def sideTrackName(name):
+    (number, nato, rest) = getNamePrefixes(name)
+    return makeNatoName(nextNumber(number), nato, rest)
+            

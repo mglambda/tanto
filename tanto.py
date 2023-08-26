@@ -173,7 +173,7 @@ class ViewState(object):
         if inPlace:
             newTrack = track
         else:
-            newTrack = self.makeCloneTrack(track)
+            newTrack = self.makeSideTrack(track)
 
         newTrack.insertClip(a)
         newTrack.insertClip(b)
@@ -185,11 +185,6 @@ class ViewState(object):
             w += "new track "
         return w + newTrack.getName()
             
-                
-            
-            
-            
-        
     def setHead(self):
         track = self.getCurrentTrack()
         if track is None:
@@ -316,12 +311,37 @@ class ViewState(object):
 
     def makeCloneTrack(self, track):
         newTrack = track.clone()
-        newTrack.name = self.makeCloneTrackName(track)
+        newTrack.name = self.makeSubTrackName(track)
         return newTrack
 
 
-    def makeCloneTrackName(self, track):
-        return str(len(self.tracks)) + " - " + track.name
+    def makeSideTrack(self, track):
+        newTrack = track.clone()
+        newTrack.name = self.makeSideTrackName(track)
+        return newTrack
+    
+
+    def makeSubTrackName(self, track):
+        name = subTrackName(track.getName())
+        allNames = list(map(lambda t: t.getName(), self.tracks))
+        while True: # we *will* name this
+            if not(name in allNames):
+                return name
+            name = sideTrackName(name)
+
+    def makeSideTrackName(self, track):
+        name = sideTrackName(track.getName())
+        allNames = list(map(lambda t: t.getName(), self.tracks))
+        while True:
+            if not(name in allNames):
+                return name
+            name = sideTrackName(name)
+                    
+                
+
+
+        
+
     
     def mergeTrack(self, fade=False):
         sourceTrack = self.getCurrentTrack()
@@ -339,7 +359,7 @@ class ViewState(object):
         if destinationTrack is None:
             return "Something went wrong. Couldn't create new track. Aborting merge."
 
-        destinationTrack.name = self.makeCloneTrackName(sourceTrack)
+        destinationTrack.name = self.makeSubTrackName(sourceTrack)
         destinationTrack.insertClip(sourceTrack.concatenate(fade=fade))
         return "Ok. Merged clips onto " + destinationTrack.getName()
 
@@ -456,7 +476,7 @@ class ViewState(object):
             new = self.currentTrack+y
             new = max(0, new)
             self.currentTrack = min(len(self.tracks)-1, new)
-            return  self.tracks[self.currentTrack].getName()
+            return  self.tracks[self.currentTrack].getDisplayName()
 
 
         track = self.getCurrentTrack()

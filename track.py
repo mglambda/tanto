@@ -33,10 +33,21 @@ class Track(object):
 
 
     def getName(self):
-        if self.isAudioOnly():
-            return self.name + "-audio"
         return self.name
-            
+
+
+    def getDisplayName(self):
+        w = self.getName()[:30]
+        if self.isAudioOnly():
+            w += " *audio*"
+
+        if self.file:
+            w += " *file*"
+
+        return w
+                
+
+        
     def empty(self):
         return len(self.data) == 0
 
