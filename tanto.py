@@ -70,6 +70,8 @@ class ViewState(object):
             "S" : self.saveClip,
             "_" : self.saveTrack,
             "r" : self.removeClip,
+            "<" : self.minFocus,
+            ">" : self.maxFocus,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
             "w" : lambda: self.shiftFocus((0, -1)),
@@ -466,7 +468,27 @@ class ViewState(object):
         self.smallTimeStep *= factor
         self.largeTimeStep *= factor
         return "timesteps are " + str(self.smallTimeStep) + " and " + str(self.largeTimeStep)
+
+
+    def minFocus(self):
+        if self.tracks == []:
+            return "No tracks. Please create a new track by hitting n."
+
+        self.currentTrack = 0
+        track = self.getCurrentTrack()
+        return track.getDisplayName()
+
+    def maxFocus(self):
+        if self.tracks == []:
+            return "No tracks. Please create a new track by hitting n."
+
+        self.currentTrack = len(self.tracks)-1
+        track = self.getCurrentTrack()
+        return track.getDisplayName()
     
+        
+        
+        
     def shiftFocus(self, pos):
         (x, y) = pos
         if self.currentTrack is None:
