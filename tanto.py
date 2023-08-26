@@ -2,7 +2,7 @@
 
 # Tanto - Terminal based Video and Audio editing tool
 
-import sys, os, threading, multiprocessing, time
+import sys, os, glob, threading, multiprocessing, time
 
 # Disable print
 def blockPrint():
@@ -26,10 +26,9 @@ from tanto_utility import *
 
 
 class ViewState(object):
-    def __init__(self, tts=None, clock=None):
+    def __init__(self, tts=None, projectdir="./"):
         self.debug = True
-        self.clock = clock
-        self.audiothread = None
+        self.projectdir = projectdir
         self.running = True
         self.tts = tts
         self.graveyard = Track(name="graveyard")
@@ -43,13 +42,16 @@ class ViewState(object):
 
 #        testfile = "/home/marius/Videos/bghyperstream2.mkv"
 
-        self.smallTimeStep = 10 # in seconds
+        self.smallTimeStep = 1 # in seconds
         self.largeTimeStep = 60 # in seconds
         self.volumeStep = 0.1
 
+        if self.projectdir:
+            self.loadDir(self.projectdir)
         
         self.cmds = {
             "q" : self.quit,
+            "Q" : self.save,
             "ENTER" : self.setMark,
             "BACKSPACE" : self.jumpToMark,
             "e" : self.setMarkEnd,
@@ -66,6 +68,7 @@ class ViewState(object):
             "+" : lambda: self.changeVolume(self.volumeStep),
             "-" : lambda: self.changeVolume((-1) * self.volumeStep),
             "S" : self.saveClip,
+            "_" : self.saveTrack,
             "r" : self.removeClip,
             "a" : lambda: self.shiftFocus((-1,0)),
             "s" : lambda: self.shiftFocus((0, 1)),
@@ -74,6 +77,8 @@ class ViewState(object):
             "n" : self.newTrack,
             "h" : self.whereAmI,
             "t" : self.whereMark,
+            "^" : lambda: self.stepFactor(0.1),
+            "´" : lambda: self.stepFactor(10),
             "f" : lambda: self.seekRelative(self.smallTimeStep),
             "b" : lambda: self.seekRelative((-1)*self.smallTimeStep),
             "F" : lambda: self.seekRelative(self.largeTimeStep),
@@ -83,21 +88,33 @@ class ViewState(object):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
 
 
-    def loadFile(self, file):
-        ws = file.split("/")
-        if ws:
-            name = ws[-1][:6]
-            name.replace(" ", "-")
-        else:
-            name = "track " + str(len(self.tracks))
+
+    def loadDir(self, dir):
+        for file in glob.glob(dir + "/*"):
+            print(file)
+            if os.path.isdir(file):
+                self.tracks.append(Track.fromDir(file))
+            else:
+                self.loadFile(file)
+                
             
+    def loadFile(self, file):
+        name = trackNameFromFile(file, "track " + str(len(self.tracks)))            
         self.newTrack(name=name, audioOnly=isAudioFile(file))
         track = self.getCurrentTrack()
         track.insertFile(file)
         track.left()
 
-            
+
+
+        
+    def save(self, file=None):
+        pass
+        
     def quit(self):
+        if self.isPlaying():
+            self.playPause()
+            
         self.running = False
         return "bye"
 
@@ -162,7 +179,7 @@ class ViewState(object):
         newTrack.insertClip(b)
         newTrack.remove()
         if not(inPlace):
-            self.tracks.append(newTrack)
+            self.appendTrack(newTrack)
         w = "Ok. cut clip onto "
         if not(inPlace):
             w += "new track "
@@ -287,7 +304,7 @@ class ViewState(object):
             newTarget.audio = newAudio
 
         if not(inPlace):
-            self.tracks.append(newTrack)
+            self.appendTrack(newTrack)
         w = "Ok. Mixed in audio track onto "
         if not(inPlace):
             w+= "new track "
@@ -295,8 +312,7 @@ class ViewState(object):
         
                 
 
-
-        
+       
 
     def makeCloneTrack(self, track):
         newTrack = track.clone()
@@ -305,7 +321,7 @@ class ViewState(object):
 
 
     def makeCloneTrackName(self, track):
-        return str(len(self.tracks)) + " from " + track.name
+        return str(len(self.tracks)) + " - " + track.name
     
     def mergeTrack(self, fade=False):
         sourceTrack = self.getCurrentTrack()
@@ -331,6 +347,14 @@ class ViewState(object):
         
         
 
+    def saveTrack(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot save. No track to save."
+        
+        track.save(self.projectdir)
+        
+    
     def saveClip(self):
         clip = self.getCurrentClip()
         if clip is None:
@@ -417,6 +441,12 @@ class ViewState(object):
     def activate(self):
         return ""
 
+
+    def stepFactor(self, factor):
+        self.smallTimeStep *= factor
+        self.largeTimeStep *= factor
+        return "timesteps are " + str(self.smallTimeStep) + " and " + str(self.largeTimeStep)
+    
     def shiftFocus(self, pos):
         (x, y) = pos
         if self.currentTrack is None:
@@ -470,10 +500,14 @@ class ViewState(object):
         if name is None:
             name = "track " + str(len(self.tracks))
             
-        self.tracks.append(Track(name=name, audioOnly=audioOnly))
+        self.appendTrack(Track(name=name, audioOnly=audioOnly))
         self.currentTrack = len(self.tracks)-1
         return "Ok"
 
+
+    def appendTrack(self, track):
+        self.tracks.append(track)
+        
 
     def getCurrentClip(self):
         track = self.getCurrentTrack()
@@ -583,12 +617,16 @@ def main(argv):
     pygame.init()
     pygame.mixer.init(freq, -16, 2, buffer)    
     screen = pygame.display.set_mode((xres,yres))
-    st = ViewState(tts=Speaker(), clock= pygame.time.Clock())
-    for file in argv[1:]:
-        st.loadFile(file)
+    clock = pygame.time.Clock()
+    projectdir = None    
+    if len(argv) == 2:
+        if os.path.isdir(argv[1]):
+            projectdir = argv[1]
+
+    st = ViewState(tts=Speaker(), projectdir=projectdir)
     
     while st.running:
-        time_delta = st.clock.tick(60)/1000.0
+        time_delta = clock.tick(60)/1000.0
 
         for event in pygame.event.get():
             if event.type == KEYDOWN:

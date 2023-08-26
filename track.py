@@ -1,5 +1,5 @@
 
-
+import os, glob
 from moviepy.editor import *
 from tanto_utility import *
 import copy
@@ -7,6 +7,7 @@ import copy
 class Track(object):
     def __init__(self, file=None, name=None, audioOnly=False):
         self.file = file
+        self.dir = dir
         self.name = name
         self.audioOnly = audioOnly
         self.data = []
@@ -54,6 +55,74 @@ class Track(object):
             return self.index >= len(self.data)
 
 
+    def fromDir(filepath):
+        print(filepath)
+        #        files = glob.glob(filepath + "/*")
+        files = os.listdir(filepath)
+        print(len(files))
+        track = Track(name=trackNameFromFile(filepath))        
+        for filename in files:
+            file = filepath + "/" + filename
+            print(file)
+            if os.path.isdir(file):
+                continue
+            track.insertFile(file)
+
+        if len(list(filter(isAudioClip, track.data))) == len(track.data):
+            track.audioOnly = True
+        return track
+
+    def save(self, projectdir):
+        if self.file:
+            return
+        
+        for i in range(len(self.data)):
+            clip = self.data[i]
+            # clip has no origin, was probably created during program execution
+            dir = self.assertDir(projectdir)
+            if isVideoClip(clip):
+                writeClip(clip, dir + str(i) + ".mkv")
+            else:
+                writeClip(clip, dir + str(i) + ".wav")
+                              
+    def assertDir(self, projectdir):
+        dir = projectdir + "/" + self.getName() + "/"
+
+
+        if os.path.isdir(dir):
+            return dir
+
+        if not(os.path.isfile(dir)):
+            os.mkdir(dir)
+            return dir
+
+        # try something nasty
+        self.dir = dir + "_"
+        return self.assertDir()
+        
+        
+    
+    
+                    
+                    
+
+    
+                
+                
+                
+                
+            
+
+            
+
+
+
+
+            
+            
+
+        
+
     def insertFile(self, file):
         if isVideoFile(file):
             if self.isAudioOnly():
@@ -61,9 +130,10 @@ class Track(object):
             clip = VideoFileClip(file)
         else:
             clip = AudioFileClip(file)
-        self.insertClip(clip)            
+        setFilepath(clip, file)
+        self.insertClip(clip)
 
-    def insertClip(self, clip):
+    def insertClip(self, clip, filepath=None):
         if self.isAudioOnly():
             if isVideoClip(clip):
                 return None
