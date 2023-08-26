@@ -63,6 +63,7 @@ class ViewState(object):
             "e" : self.setMarkEnd,
             '"' : self.createVoiceClip,
             "!" : self.createSilenceClip,
+            ";" : self.renameTrack,
             "=" : self.setVolume,
             "SPACE" : self.playPause,
             "x" : self.setHead,
@@ -445,6 +446,26 @@ class ViewState(object):
         
 
 
+    def renameTrack(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Sorry, no track currently selected to rename."
+
+        def handle(w):
+            if not(w):
+                self.tts.speak("Please enter a new name for the track.")
+                return False
+            track.name = w
+            self.tts.speak("Ok. Renamed track to " + w)
+            self.cancelTextMode()
+            return True
+
+        self.enableTextMode(handle)
+#        self.textinput.value = track.name                    
+        return "Please enter a new name for the track. Enter to confirm, escape to exit."
+            
+        
+    
     def setVolume(self):
         clip = self.getCurrentClip()
         if clip is None:
