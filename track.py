@@ -67,14 +67,10 @@ class Track(object):
 
 
     def fromDir(filepath):
-        print(filepath)
-        #        files = glob.glob(filepath + "/*")
         files = os.listdir(filepath)
-        print(len(files))
         track = Track(name=trackNameFromFile(filepath))        
         for filename in files:
             file = filepath + "/" + filename
-            print(file)
             if os.path.isdir(file):
                 continue
             track.insertFile(file)
@@ -166,8 +162,6 @@ class Track(object):
         if self.empty():
             self.index = None
 
-        print(str(self.index))
-        print(str(len(self.data)))              
 
     def strIndex(self):
         if self.index is None:
