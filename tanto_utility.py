@@ -1,5 +1,5 @@
 
-
+from tempfile import mkstemp
 from moviepy.editor import *
 from datetime import timedelta
 import random
@@ -183,11 +183,6 @@ def subTrackName(name):
 def sideTrackName(name):
     (number, nato, rest) = getNamePrefixes(name)
     return makeNatoName(nextNumber(number), nato, rest)
-            
-
-
-TTS_TEMP_FILE = ".tts.tmp.wav"
-TTS_TEMP_TXT = ".tmpmsg"
 
 def getTTSProgram():
     voxin = "voxin-say"
@@ -198,31 +193,36 @@ def getTTSProgram():
     return "voxin-say"
 
 def runTTSProgram(prog, w):
+    # returns none if unsuccessful, tuple of (result, TMPWAVEFILE) otherwise
     if prog == "voxin-say":
-        f = open(TTS_TEMP_TXT, "w")
+        (x, tmptxtfile) = mkstemp(text=True)
+        f = open(tmptxtfile, "w")
         f.write(w)
-        f.flush()        
-        r = subprocess.run([prog, "-f", TTS_TEMP_TXT, "-w", TTS_TEMP_FILE])
-        return r
+        f.flush()
+        (x2, tmpwavfile) = mkstemp()
+        r = subprocess.run([prog, "-f", tmptxtfile, "-w", tmpwavfile])
+        return (r, tmpwavfile)
     return None
 
 def makeVoiceClip(w):
-    # this is a workaround because the pygame_textinput will not allow newlines, but we need newlines specifically for the voxin speech synthesizer
     prog = getTTSProgram()
     if not(prog):
         return None
 
-    r = runTTSProgram(prog, w)
+    maybeResult = runTTSProgram(prog, w)
+    if maybeResult is None:
+        return None
+
+    (r, tmpwavfile) = maybeResult
     if not(r):
         return None
-    clip = AudioFileClip(TTS_TEMP_FILE)
-#    os.remove(TTS_TEMP_FILE)
+    clip = AudioFileClip(tmpwavfile)
     return clip
     
-TEMP_WAV_FILE = ".tmp.wav"
 def makeSilenceClip(duration):
     # Open a (new if necessary) wave file for binary writing
-    outf = wave.open(TEMP_WAV_FILE, "wb")
+    (fh, tmpfilename) = mkstemp()
+    outf = wave.open(tmpfilename, "wb")
     framerate = 48000
     bytesperframe = 2 # 2 -> 16 bit
     outf.setframerate(48000)
@@ -232,8 +232,7 @@ def makeSilenceClip(duration):
     outf.writeframes(bytes(0 for i in range(int(duration * framerate) * bytesperframe)))
 
 
-    clip = AudioFileClip(TEMP_WAV_FILE)
-#    os.remove(TEMP_WAV_FILE)
+    clip = AudioFileClip(tmpfilename)
     return clip
 
 
