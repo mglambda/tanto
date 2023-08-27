@@ -100,7 +100,14 @@ class ViewState(object):
         for n in list(range(0,10)):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
 
-
+        # workspaces
+        self.num_workspaces = 4
+        self.currentWorkspace = 1
+        self.workspaces = {i : ([], None) for i in range(1, self.num_workspaces+1)}
+        
+        for n in list(range(1, self.num_workspaces+1)):
+            print(str(n))
+            self.cmds["F"+str(n)] = lambda n=n: self.switchToWorkspace(n)
 
     def loadDir(self, dir):
         for file in glob.glob(dir + "/*"):
@@ -723,12 +730,41 @@ class ViewState(object):
     
         
         
+
+    def switchToWorkspace(self, n):
+        if not(n in self.workspaces):
+            return "Cannot switch to workspaces: Not a valid workspace."
+
+        if not(self.currentWorkspace in self.workspaces):
+            return "Cannot switch workspace: Something is very wrong."
+
+        if not(self.workspaces[self.currentWorkspace][0] == []):
+            # this shouldn't come up, but it's better to have a cryptic message than to lose data
+            return "Cannot switch workspaces: Stash isn't empty." 
+
+        self.workspaces[self.currentWorkspace] = (self.tracks, self.currentTrack)
+        (self.tracks, self.currentTrack) = self.workspaces[n]
+        self.workspaces[n] = ([], None)
+        self.currentWorkspace = n
+        return "Now on workspace " + str(n)
         
+        
+        
+            
+            
+        
+    
     def shiftFocus(self, pos):
         (x, y) = pos
         if self.currentTrack is None:
             return "No tracks. Please create a new track by hitting n."
 
+        # sanity, this can come up due to workspace shenanigans
+        if (self.currentTrack < 0) or (self.currentTrack >= len(self.tracks)):
+            self.currentTrack = None
+            return "Whoops. Something got lust in the shuffling. Try again."
+    
+        
         if y != 0:
             new = self.currentTrack+y
             new = max(0, new)
@@ -887,7 +923,7 @@ class ViewState(object):
 def getKeyRepresentation(event):
     # we like keys as simple strings with all modifiers like so "CTRL+ALT+ENTER" etc.
     w = ""
-    d = {K_RETURN : "ENTER", K_SPACE : "SPACE", K_TAB : "TAB", K_BACKSPACE : "BACKSPACE"}
+    d = {K_RETURN : "ENTER", K_SPACE : "SPACE", K_TAB : "TAB", K_BACKSPACE : "BACKSPACE", K_F1 : "F1", K_F2 : "F2", K_F3 : "F3", K_F4 : "F4"}
     keystring = d.get(event.key, event.unicode)
 
     
