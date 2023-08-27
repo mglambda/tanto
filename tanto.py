@@ -3,6 +3,8 @@
 # Tanto - Terminal based Video and Audio editing tool
 
 import sys, os, glob, threading, multiprocessing, time
+import traceback
+import logging
 
 # Disable print
 def blockPrint():
@@ -1052,7 +1054,13 @@ def main(argv):
 
                 f = st.cmds.get(getKeyRepresentation(event), False)
                 if f:
-                    msg = f()
+                    try:
+                        # FIXME: this is a bit strong, but we don't want to lose data
+                        msg = f()
+                    except Exception as e:
+                        logging.error(traceback.format_exc())
+                        msg = "exception"
+
                     if msg:
                         st.tts.speak(msg)
                         if not(st.isTextMode()):
