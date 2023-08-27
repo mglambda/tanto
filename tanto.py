@@ -33,7 +33,7 @@ class ViewState(object):
         self.projectdir = projectdir
         self.running = True
         self.tts = tts
-        self.graveyard = Track(name="graveyard")
+        self.graveyard = Track(name="graveyard", locked=True)
         self.tracks = [self.graveyard]
         self.head = None
         self.currentTrack = None
@@ -79,6 +79,8 @@ class ViewState(object):
             "S" : self.saveClip,
             "_" : self.saveTrack,
             "r" : self.removeClip,
+            "CTRL+r" : self.removeTrack,
+            "CTRL+l" : self.toggleLock,
             "<" : self.minFocus,
             ">" : self.maxFocus,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -238,8 +240,6 @@ class ViewState(object):
         pos = getSeekPos(clip)
         begin = min(mark, pos)
         end = max(mark,pos)
-        print(str(begin))
-        print(str(end))
 
         preclip = clip.subclip(0, begin)
         sclip = clip.subclip(begin, end)
@@ -262,11 +262,33 @@ class ViewState(object):
         
 
 
+    def toggleLock(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot lock or unlock: No track selected."
+
+        if track.name == "graveyard":
+            if track.isLocked():
+                return "Cannot unlock graveyard. Sorry."
+            track.lock()
+            return "Abandon all hope, ye who enter the graveyard, for it is locked!"
+
+
+        if track.isLocked():
+            track.unlock()
+            return "Track unlocked."
+        track.lock()
+        return "Track locked."
+       
     def removeClip(self):
         track = self.getCurrentTrack()
         if track is None:
             return "No track to remove clip from."
 
+
+        if track.isLocked():
+            return "Cannot remove clip: Owning track is locked."
+        
         if track.empty():
             return "Can't remove clip: No clips in track."
 
@@ -276,6 +298,30 @@ class ViewState(object):
         return "Ok. Clip moved to graveyard."
         
 
+    def removeTrack(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot remove track: No current track selected."
+
+        if track.isLocked():
+            return "Cannot remove track: Track is locked."
+
+        n = 0
+        name = track.getName()
+        track.rewind()
+        while not(track.empty()):
+            n += 1
+            self.removeClip()
+
+        del self.tracks[self.currentTrack]
+        self.shiftFocus((0, -1))
+        return "Ok. Removed track " + name + ". Moved " + str(n) + "clips to graveyard."
+
+            
+            
+        
+        return "remove track"
+    
     def mixAudio(self, inPlace=False):
         # get the audio from subclip between mark and seekpos, and mix it into the audio of the clip at HEAD
         # if the mixed-in audio clip is longer than clip at head, it is cropped
@@ -836,7 +882,28 @@ class ViewState(object):
     
         
             
-        
+
+
+def getKeyRepresentation(event):
+    # we like keys as simple strings with all modifiers like so "CTRL+ALT+ENTER" etc.
+    w = ""
+    d = {K_RETURN : "ENTER", K_SPACE : "SPACE", K_TAB : "TAB", K_BACKSPACE : "BACKSPACE"}
+    keystring = d.get(event.key, event.unicode)
+
+    
+    keys = pygame.key.get_pressed()
+    if keys[K_LCTRL] or keys[K_RCTRL]:
+        w += "CTRL+"
+        keystring = pygame.key.name(event.key) #unicode representation is messed up when some modifiers are present
+
+    if keys[K_LALT] or keys[K_RALT]:
+        w += "ALT+"
+        keystring = pygame.key.name(event.key)
+
+    # FIXME: do shift?
+    
+    return w + keystring
+    
 def main(argv):
     (xres, yres) = (1024, 768)
 
@@ -878,16 +945,8 @@ def main(argv):
                         st.cancelTextMode()
                     continue
 
-                if event.key == 13: #enter
-                    f = st.cmds.get("ENTER", False)
-                elif event.key == K_SPACE:
-                    f = st.cmds.get("SPACE", False)
-                elif event.key == K_BACKSPACE:
-                    f = st.cmds.get("BACKSPACE", False)                                        
-                elif event.key == 9: # tab
-                    f = st.cmds.get("TAB", False)
-                else:
-                    f = st.cmds.get(event.unicode, False)
+
+                f = st.cmds.get(getKeyRepresentation(event), False)
                 if f:
                     msg = f()
                     if msg:

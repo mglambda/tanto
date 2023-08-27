@@ -5,15 +5,27 @@ from tanto_utility import *
 import copy
 
 class Track(object):
-    def __init__(self, file=None, name=None, audioOnly=False):
+    def __init__(self, file=None, name=None, audioOnly=False, locked=False):
         self.file = file
         self.dir = dir
+        self.locked = locked
         self.name = name
         self.audioOnly = audioOnly
         self.data = []
         self.index = None
         self.fadeDuration = 1.0
 
+    def isLocked(self):
+        return self.locked
+
+    def lock(self):
+        self.locked = True
+
+    def unlock(self):
+        self.locked = False
+            
+            
+        
     def isAudioOnly(self):
         return self.audioOnly
         
@@ -47,6 +59,9 @@ class Track(object):
         return w
                 
 
+
+    def rewind(self):
+        self.index = 0
         
     def empty(self):
         return len(self.data) == 0
@@ -67,7 +82,7 @@ class Track(object):
 
 
     def fromDir(filepath):
-        files = os.listdir(filepath)
+        files = sorted(os.listdir(filepath))
         track = Track(name=trackNameFromFile(filepath))        
         for filename in files:
             file = filepath + "/" + filename

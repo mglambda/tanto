@@ -239,3 +239,4 @@ def makeSilenceClip(duration):
 
 def isFloat(w):
     return w.replace(".", "0").replace("-","0").isdigit()
+
