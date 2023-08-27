@@ -689,7 +689,15 @@ class ViewState(object):
         clip = self.getCurrentSubclip()
         if clip is None:
             return "No clip to copy!"
-        
+
+
+        # this is for more intuitive behaviour when people have just selected a new clip without mark or seek set
+        if clip.duration == 0:
+            # usually noone wants to copy a 0 duration clip -> let's assume they want the entire current clip instead.
+            clip = self.getCurrentClip()
+            if clip is None:
+                return "Sorry, something went wrong."
+            
         track = self.head
         if track is None:
             return "Head is not set!"
