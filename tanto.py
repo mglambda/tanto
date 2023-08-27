@@ -74,6 +74,12 @@ class ViewState(object):
             "M" : lambda: self.mergeTrack(fade=True),
             "p" : self.mixAudio,
             "P" : lambda: self.mixAudio(inPlace=True),
+            "CTRL+p" : lambda: self.shiftFocus((0, -1)),
+            "CTRL+n" : lambda: self.shiftFocus((0, 1)),
+            "CTRL+f" : lambda: self.shiftFocus((1, 0)),
+            "CTRL+b" : lambda: self.shiftFocus((-1, 0)),
+            "ALT+p" : lambda: self.orderTrack(-1),
+            "ALT+n" : lambda: self.orderTrack(1),
             "+" : lambda: self.changeVolume(self.volumeStep),
             "-" : lambda: self.changeVolume((-1) * self.volumeStep),
             "S" : self.saveClip,
@@ -776,6 +782,36 @@ class ViewState(object):
         
             
             
+        
+
+
+    def orderTrack(self, direction):
+        # move track up or down in display
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot reorder track: No track!"
+        l = len(self.tracks)
+        if l <= 1:
+            return "Not enough tracks to reorder."
+
+        x = self.currentTrack + direction
+        if (x < 0): 
+            return "Can't reorder. Reached top."
+        if (x >= l):
+            return "Can't reorder. Reached bottom."
+        
+        tmp = self.tracks[x]
+        self.tracks[x] = track
+        self.tracks[self.currentTrack] = tmp
+        self.currentTrack = x
+        if direction <= 0:
+            return "Moved up with " + track.getDisplayName()
+        return "Moved down with " + track.getDisplayName()
+        
+        
+        
+        
+        
         
     
     def shiftFocus(self, pos):
