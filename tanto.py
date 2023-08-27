@@ -238,14 +238,23 @@ class ViewState(object):
         pos = getSeekPos(clip)
         begin = min(mark, pos)
         end = max(mark,pos)
+        print(str(begin))
+        print(str(end))
+
         preclip = clip.subclip(0, begin)
         sclip = clip.subclip(begin, end)
-        afterclip = clip.subclip(end)
+        if end >= clip.duration:
+            afterclip = clip
+        else:
+            afterclip = clip.subclip(end)
         return (preclip, sclip, afterclip)
 
 
     def getCurrentSubclip(self):
         sclip = self.getCurrentTrisection()[1]
+        if sclip is None:
+            return None
+        
         # more intuitive to have mark and seekpos reset on new clip
         setMark(sclip, 0)
         setSeekPos(sclip, 0)
