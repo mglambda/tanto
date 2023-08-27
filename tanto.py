@@ -102,7 +102,6 @@ class ViewState(object):
 
     def loadDir(self, dir):
         for file in glob.glob(dir + "/*"):
-            print(file)
             if os.path.isdir(file):
                 self.tracks.append(Track.fromDir(file))
             else:
@@ -711,8 +710,6 @@ class ViewState(object):
             return w
         w += " at position " + toTimecode(getSeekPos(clip))
         if isAudioClip(clip):
-            print(str(type(clip)))
-            print(str(type(clip).__mro__))
             w += " *audio*"
         if isVideoClip(clip):
             w += " *video*"
