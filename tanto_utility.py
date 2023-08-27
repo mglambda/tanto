@@ -55,17 +55,14 @@ def isVideoFile(filename):
 
 
 def makeCompositeAudioClip(clips, offset=0):
-        # there's a bug in moviepy with audio fps, so we have to workaround
     if not(clips):
         return None
 
     for i in range(1, len(clips)):
-        clips[i] = clips[i].set_start(offset)
-    
-    tmp = CompositeAudioClip(clips)
-    x = clips[0]
-    tmp.fps = x.fps    
-    return tmp
+        clips[i] = clips[i].with_start(offset)
+
+
+    return CompositeAudioClip(clips)
 
 def resetClipPositions(clip):
     setSeekPos(clip, 0)
@@ -190,6 +187,7 @@ def sideTrackName(name):
 
 
 TTS_TEMP_FILE = ".tts.tmp.wav"
+TTS_TEMP_TXT = ".tmpmsg"
 
 def getTTSProgram():
     voxin = "voxin-say"
@@ -201,11 +199,15 @@ def getTTSProgram():
 
 def runTTSProgram(prog, w):
     if prog == "voxin-say":
-        r = subprocess.run([prog, "-w", TTS_TEMP_FILE, '"' + w + '"'])
+        f = open(TTS_TEMP_TXT, "w")
+        f.write(w)
+        f.flush()        
+        r = subprocess.run([prog, "-f", TTS_TEMP_TXT, "-w", TTS_TEMP_FILE])
         return r
     return None
 
 def makeVoiceClip(w):
+    # this is a workaround because the pygame_textinput will not allow newlines, but we need newlines specifically for the voxin speech synthesizer
     prog = getTTSProgram()
     if not(prog):
         return None
@@ -214,7 +216,7 @@ def makeVoiceClip(w):
     if not(r):
         return None
     clip = AudioFileClip(TTS_TEMP_FILE)
-    os.remove(TTS_TEMP_FILE)
+#    os.remove(TTS_TEMP_FILE)
     return clip
     
 TEMP_WAV_FILE = ".tmp.wav"
@@ -231,7 +233,7 @@ def makeSilenceClip(duration):
 
 
     clip = AudioFileClip(TEMP_WAV_FILE)
-    os.remove(TEMP_WAV_FILE)
+#    os.remove(TEMP_WAV_FILE)
     return clip
 
 

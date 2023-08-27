@@ -215,8 +215,8 @@ class Track(object):
             tmp = concatenate_videoclips(self.data)
 
         # there's a bug in moviepy with audio fps, so we have to workaround        
-        x = self.data[0].audio
-        tmp.audio.fps = x.fps
+        #x = self.data[0].audio
+        #tmp.audio.fps = x.fps
         return tmp
 
 

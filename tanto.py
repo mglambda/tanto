@@ -61,6 +61,7 @@ class ViewState(object):
             '"' : self.createVoiceClip,
             "!" : self.createSilenceClip,
             "§" : self.createVoiceOver,
+            "$" : lambda: self.createVoiceOver(file=True),
             ";" : self.renameTrack,
             "=" : self.setVolume,
             "SPACE" : self.playPause,
@@ -415,11 +416,11 @@ class ViewState(object):
 
         mark = getMark(clip)
         if mark == 0:
-            self.setCurrentClip(clip.volumex(factor))
+            self.setCurrentClip(clip.multiply_volume(factor))
             return "Ok. Changed volume by " + str(step)
 
         (preclip, sclip, afterclip) = self.getCurrentTrisection()
-        sclip = sclip.volumex(factor)
+        sclip = sclip.multiply_volume(factor)
         tmp = Track()
         tmp.insertClip(preclip)
         tmp.insertClip(sclip)
@@ -475,7 +476,7 @@ class ViewState(object):
                 self.tts.speak("Can't set volume to negative number. Please specify a positive decimal number, like 0.2 or 3.1")
                 return False
 
-            self.setCurrentClip(clip.volumex(p))
+            self.setCurrentClip(clip.multiply_volume(p))
             self.cancelTextMode()
             self.tts.speak("Ok. scaled volume to " + str(p) + " times its original value.")
             return True
@@ -500,8 +501,9 @@ class ViewState(object):
         return h
 
 
-    def createVoiceOver(self):
+    def createVoiceOver(self, file=False):
         # enter a text and it is spoken and mixed into the current clip, at the mark position, while quieting the clip it is mixed into
+        # file = true means you enter a name of a text file instead
         track = self.getCurrentTrack()
         if track is None:
             return "Sorry, please select a track or create one."
@@ -518,9 +520,21 @@ class ViewState(object):
         
         def handle(w):
             if not(w):
-                self.tts.speak("Please enter some text for the voice over.")
+                if file:
+                    st.tts.speak("Please enter a file name.")
+                else:
+                    self.tts.speak("Please enter some text for the voice over.")
                 return False
 
+            if file:
+                try:
+                    v = open(w, "r").read()
+                except:
+                    st.tts.speak("Error opening file. Please specify a valid text file to crate the voice over from.")
+                    return False
+                w = v
+                
+                
 
             voice = makeVoiceClip(w)
             duration = voice.duration
@@ -531,7 +545,7 @@ class ViewState(object):
             middle = resetClipPositions(clip.subclip(mark, mark+duration))
             end = resetClipPositions(clip.subclip(mark+duration, clip.end))
             # FIXME: this currently will crash on pure audio clips, but voice over is mostly used for video anyway
-            middle = middle.volumex(self.quietFactor)
+            middle = middle.multiply_volume(self.quietFactor)
             middle.audio = makeCompositeAudioClip([middle.audio, voice])
             tmp = Track()
             tmp.insertClip(begin)
@@ -547,7 +561,10 @@ class ViewState(object):
             return True
 
         self.enableTextMode(handle)
+        if file:
+            return "Please enter the filename of a textfile to create the voice over from."
         return "Please enter a text for the voice over."
+
     def createSilenceClip(self):
         if self.head:
             track = self.head
@@ -842,6 +859,12 @@ def main(argv):
                 if st.isTextMode():
                     st.tts.speak(textinput.value)
                     if event.key == 13: # enter
+                        if pygame.key.get_pressed()[K_LCTRL]:
+                            # control enter makes a newline
+                            textinput.value += "\n"
+                            textinput.manager.cursor_pos += 1
+                            continue
+                            
                         deleteText = st.handleText(textinput.value)
                         if deleteText:
                             textinput.value = ""
