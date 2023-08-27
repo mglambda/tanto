@@ -106,8 +106,9 @@ class ViewState(object):
         self.workspaces = {i : ([], None) for i in range(1, self.num_workspaces+1)}
         
         for n in list(range(1, self.num_workspaces+1)):
-            print(str(n))
             self.cmds["F"+str(n)] = lambda n=n: self.switchToWorkspace(n)
+            self.cmds["CTRL+" + str(n)] = lambda n=n: self.sendTrack(n)
+            
 
     def loadDir(self, dir):
         for file in glob.glob(dir + "/*"):
@@ -747,6 +748,29 @@ class ViewState(object):
         self.workspaces[n] = ([], None)
         self.currentWorkspace = n
         return "Now on workspace " + str(n)
+        
+        
+    def sendTrack(self, workspace):
+        if not(workspace in self.workspaces):
+            return "Cannot send track to wworkspace: Invalid workspace."
+
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot send track to workspace: No track!"
+
+        if workspace == self.currentWorkspace:
+            return "Track is already on that workspace. No change."
+
+        otherCurrentTrack = self.workspaces[workspace][1]
+        if otherCurrentTrack == None:
+            # this happens when we send a track to an otherwise untouched workspace
+            otherCurrentTrack = 0
+            
+        self.workspaces[workspace] = (self.workspaces[workspace][0] + [track], otherCurrentTrack)
+        del self.tracks[self.currentTrack]
+        self.shiftFocus((0,-1))
+        return "Ok. Sent track to workspace " + str(workspace)
+    
         
         
         
