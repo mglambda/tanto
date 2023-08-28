@@ -58,6 +58,7 @@ class ViewState(object):
             "q" : self.quit,
             "Q" : self.save,
             "ENTER" : self.setMark,
+            "ALT+ENTER" : self.setHeadOffset,
             "BACKSPACE" : self.jumpToMark,
             "e" : self.setMarkEnd,
             '"' : self.createVoiceClip,
@@ -149,6 +150,8 @@ class ViewState(object):
 
 
 
+    
+    
     def setMark(self, pos=None):
         clip = self.getCurrentClip()
         if clip is None:
@@ -183,6 +186,23 @@ class ViewState(object):
         return self.seek(mark)
 
 
+    def setHeadOffset(self):
+        # sets the offset of track at head to current clip's mark
+        # this is used mostly to neatly position linked tracks for merging
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Need a clip to set offset!"
+
+        if self.head is None:
+            return "Cannot set offset: Head is not pointing at any track."
+
+        mark = getMark(clip)
+        self.head.setOffset(mark)
+        return "offset " + showMark(mark) + " for " + self.head.getName()
+        
+        
+        
+
     def bisect(self, inPlace=False):
         # cuts current clip at its mark, and creates a new track with 2 clips instead of one. Can also be called to cut-inplace, modfying the current track
         clip = self.getCurrentClip()
@@ -202,7 +222,7 @@ class ViewState(object):
         if inPlace:
             newTrack = track
         else:
-            newTrack = self.makeSideTrack(track)
+            newTrack = self.makeCloneTrack(track)
 
         newTrack.insertClip(a)
         newTrack.insertClip(b)
@@ -240,8 +260,7 @@ class ViewState(object):
         if track is None:
             return "Something went wrong (no track??)"
 
-        n = len(self.findChildren(track))
-        nt = Track(name=sideTrackName(track.getName(), n),parent=(track.name, track.index))
+        nt = Track(name=sideTrackName(track.getName(), track.index),parent=(track.name, track.index))
         self.tracks.insert(self.currentTrack+1, nt)
         self.shiftFocus((0, 1))
         self.head = nt
@@ -1083,11 +1102,13 @@ def getKeyRepresentation(event):
     keys = pygame.key.get_pressed()
     if keys[K_LCTRL] or keys[K_RCTRL]:
         w += "CTRL+"
-        keystring = pygame.key.name(event.key) #unicode representation is messed up when some modifiers are present
+        if not(event.key in d):
+            keystring = pygame.key.name(event.key) #unicode representation is messed up when some modifiers are present
 
     if keys[K_LALT] or keys[K_RALT]:
         w += "ALT+"
-        keystring = pygame.key.name(event.key)
+        if not(event.key in d):        
+            keystring = pygame.key.name(event.key)
 
     # FIXME: do shift?
     

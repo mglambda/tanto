@@ -81,7 +81,11 @@ class Track(object):
         w = self.getName()[:30]
 
         if self.hasParent():
-            w = "*link* " + w
+            if self.getOffset() > 0:
+                offsetstr = showMark(self.getOffset())
+            else:
+                offsetstr = ""
+            w = "*link " + offsetstr + "* " + w
             
         if self.isAudioOnly():
             w += " *audio*"

@@ -272,3 +272,9 @@ def partitionClips(clips):
     return (vclips, aclips)
     
         
+
+
+def showMark(mark):
+    if mark > 60:
+        return toTimecode(mark)
+    return str(mark) + " seconds"    
