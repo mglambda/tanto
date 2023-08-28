@@ -5,6 +5,8 @@ from tanto_utility import *
 import copy
 
 class Track(object):
+
+    storable = "parent audioOnly index locked".split(" ")
     def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0):
         self.file = file
         self.dir = dir
@@ -131,7 +133,7 @@ class Track(object):
 
 
     def fromDir(filepath):
-        files = sorted(os.listdir(filepath))
+        files = list(filter(lambda w: w[0:1] != ".", sorted(os.listdir(filepath))))
         track = Track(name=trackNameFromFile(filepath))        
         for filename in files:
             file = filepath + "/" + filename
@@ -143,19 +145,54 @@ class Track(object):
             track.audioOnly = True
         return track
 
+    def loadVars(self, projectdir):
+        dir = projectdir + "/" + self.name
+        if not(os.path.isdir(dir)):
+            return
+
+        for key in Track.storable:
+            file = dir + "/." + key
+            if not(os.path.isfile(file)):
+                continue
+            w = open(file, "r").read()
+            tmp = self.__dict__[key]
+            try:
+                self.__dict__[key] = eval(w)
+            except:
+                self.__dict__[key] = tmp
+                
+            
+            
+        
+    
+    def storeVars(self, projectdir):
+        dir = self.assertDir(projectdir)
+        for key in Track.storable:
+            filename = "." + key
+            f = open(dir + "/" + filename, "w")
+            f.write(str(self.__dict__[key]))
+            f.close()
+                             
+
+                 
+            
+            
+    
     def save(self, projectdir):
         if self.file:
             return
-        
+
+        self.storeVars(projectdir)
+        dir = self.assertDir(projectdir)
         for i in range(len(self.data)):
             clip = self.data[i]
             # clip has no origin, was probably created during program execution
-            dir = self.assertDir(projectdir)
             if isVideoClip(clip):
                 writeClip(clip, dir + str(i) + ".mkv")
             else:
                 writeClip(clip, dir + str(i) + ".wav")
-                              
+
+                
     def assertDir(self, projectdir):
         dir = projectdir + "/" + self.getName() + "/"
 

@@ -123,7 +123,10 @@ class ViewState(object):
     def loadDir(self, dir):
         for file in glob.glob(dir + "/*"):
             if os.path.isdir(file):
-                self.tracks.append(Track.fromDir(file))
+                nt = Track.fromDir(file)
+                nt.loadVars(self.projectdir)
+                self.tracks.append(nt)
+
             else:
                 self.loadFile(file)
                 
