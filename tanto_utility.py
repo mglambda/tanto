@@ -275,6 +275,14 @@ def partitionClips(clips):
 
 
 def showMark(mark):
+    if mark > 60 * 60:
+        return toTimecode(mark)    
     if mark > 60:
-        return toTimecode(mark)
+        ws = toTimecode(mark).split(":")
+        return ws[1] + ":" + ws[2]
+
     return str(mark) + " seconds"    
+
+
+def padZero(w, num_zeroes=10):
+    return "0"*(num_zeroes - len(w)) + w

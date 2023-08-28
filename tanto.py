@@ -68,6 +68,7 @@ class ViewState(object):
             "v" : self.bisect,
             "V" : lambda: self.bisect(inPlace=True),
             "c" : self.copyToHead,
+            "ALT+c" : self.createCloneTrack,
             "m" : self.mergeTrack2,
             "M" : lambda: self.mergeTrack(fade=True),
             "p" : self.mixAudio,
@@ -288,13 +289,6 @@ class ViewState(object):
         self.shiftFocus((0, 1))
         self.head = nt
         return "Created linked track " + nt.getName() + " and pointed head at it."
-        
-
-        
-        
-        
-
-
 
     def getCurrentLinkedTracks(self):
         clip = self.getCurrentClip()
@@ -492,8 +486,20 @@ class ViewState(object):
 
        
 
+    def createCloneTrack(self):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Need a track to clone!"
+
+        nt = self.makeCloneTrack(track)
+        self.appendTrack(nt)
+        return "Cloned to track " + nt.getName()
+            
+        
+    
     def makeCloneTrack(self, track):
         newTrack = track.clone()
+        newTrack.temporary = True
         newTrack.name = self.makeSubTrackName(track)
         return newTrack
 
@@ -988,6 +994,8 @@ class ViewState(object):
         if track is None:
             return "Please create at least 1 track."
         w = track.getName()
+        if track.temporary:
+            w = "temporary " + w
         w += " at " + track.strIndex()
         if track.hasParent():
             w += " linked to " + track.getParentTrackName() + " at clip " + str(track.getParentTrackIndex())
@@ -1070,7 +1078,9 @@ class ViewState(object):
             time.sleep(0.1)
             self.playPause()
             return "" # don't interrupt playback
-        return "seek to " + toTimecode(t)
+        return showMark(t)
+#        return toTimecode(t)
+
 
         
 

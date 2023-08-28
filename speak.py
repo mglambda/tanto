@@ -4,8 +4,9 @@ from subprocess import Popen, PIPE
 import sys
 
 class Speaker(object):
-    def __init__(self, speed=50):
+    def __init__(self, speed=40, punct="some"):
         self._speed = speed
+        self._punct = punct
         self.init()
         
 
@@ -15,7 +16,7 @@ class Speaker(object):
 
 
     def speak(self, w):
-        Popen(["spd-say", "-r " + str(self._speed), w], stdin=PIPE)
+        Popen(["spd-say", "-m", self._punct, "-r", str(self._speed), w], stdin=PIPE)
         
 #    def speak(self, w):
 ##        self._espeak.communicate(input=bytes(w, sys.getdefaultencoding()))

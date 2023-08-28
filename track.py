@@ -137,7 +137,7 @@ class Track(object):
 
 
     def fromDir(filepath):
-        files = list(filter(lambda w: w[0:1] != ".", sorted(os.listdir(filepath))))
+        files = list(filter(lambda w: w[0:1] != ".", sorted(os.listdir(filepath), key=lambda w: padZero(w))))
         track = Track(name=trackNameFromFile(filepath))        
         for filename in files:
             file = filepath + "/" + filename
