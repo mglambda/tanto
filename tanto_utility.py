@@ -9,7 +9,6 @@ import wave
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
 
-
 def getFilepath(clip):
     if not("filepath" in clip.__dict__):
         return None
@@ -35,6 +34,14 @@ def getMark(clip):
 def setMark(clip, mark):
     clip.mark = mark
 
+def setChildTracks(clip, tracks):
+    clip.childTracks = tracks
+
+def getChildTracks(clip):
+    if "childTracks" in clip.__dict__:
+        return clip.childTracks
+    return []
+
 
 def isAudioClip(clip):
     return isinstance(clip, AudioClip)
@@ -52,6 +59,10 @@ def isVideoFile(filename):
     return not(isAudioFile(filename))
 
 
+def getAudioClip(clip):
+    if isAudioClip(clip):
+        return clip
+    return clip.audio
 
 
 def makeCompositeAudioClip(clips, offset=0):
@@ -180,8 +191,17 @@ def subTrackName(name):
     (number, nato, rest) = getNamePrefixes(name)
     return makeNatoName(number, nextNato(nato), rest)
 
-def sideTrackName(name):
+def assertInt(w):
+    try:
+        n = int(w)
+    except:
+        return 0
+    return n
+
+def sideTrackName(name, n=None):
     (number, nato, rest) = getNamePrefixes(name)
+    if n:
+        return makeNatoName(str(n), nato, rest)        
     return makeNatoName(nextNumber(number), nato, rest)
 
 def getTTSProgram():
@@ -239,3 +259,16 @@ def makeSilenceClip(duration):
 def isFloat(w):
     return w.replace(".", "0").replace("-","0").isdigit()
 
+
+
+def partitionClips(clips):
+    aclips = []
+    vclips = []
+    for clip in clips:
+        if isAudioClip(clip):
+            aclips.append(clip)
+            continue
+        vclips.append(clip)
+    return (vclips, aclips)
+    
+        

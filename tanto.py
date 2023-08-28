@@ -72,7 +72,7 @@ class ViewState(object):
             "v" : self.bisect,
             "V" : lambda: self.bisect(inPlace=True),
             "c" : self.copyToHead,
-            "m" : self.mergeTrack,
+            "m" : self.mergeTrack2,
             "M" : lambda: self.mergeTrack(fade=True),
             "p" : self.mixAudio,
             "P" : lambda: self.mixAudio(inPlace=True),
@@ -89,6 +89,7 @@ class ViewState(object):
             "r" : self.removeClip,
             "CTRL+r" : self.removeTrack,
             "CTRL+l" : self.toggleLock,
+            "ALT+l" : self.createLinkTrack,
             "<" : self.minFocus,
             ">" : self.maxFocus,
             "a" : lambda: self.shiftFocus((-1,0)),
@@ -212,6 +213,65 @@ class ViewState(object):
         if not(inPlace):
             w += "new track "
         return w + newTrack.getName()
+
+    def findTrack(self, trackname):
+        tracks = list(filter(lambda t: t.name == trackname, self.tracks))
+        if tracks == []:
+            return None
+        return tracks [0]
+
+    def getParentClip(self, track):
+        if not(track.hasParent()):
+            return None
+        
+        (parentname, parentindex) = (track.getParentTrackName(), track.getParentTrackIndex())
+        parenttrack = self.findTrack(parentname)
+        if parenttrack is None:
+            return None
+
+        return parenttrack.get(parentindex)
+
+    def createLinkTrack(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Need a clip to link the track to."
+        
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Something went wrong (no track??)"
+
+        n = len(self.findChildren(track))
+        nt = Track(name=sideTrackName(track.getName(), n),parent=(track.name, track.index))
+        self.tracks.insert(self.currentTrack+1, nt)
+        self.shiftFocus((0, 1))
+        self.head = nt
+        return "Created linked track " + nt.getName() + " and pointed head at it."
+        
+
+        
+        
+        
+
+
+
+    def getCurrentLinkedTracks(self):
+        clip = self.getCurrentClip()
+        track = self.getCurrentTrack()
+        if (clip is None) or (track is None):
+            return []
+
+        return self.findChildren(track)
+    
+
+    def findChildren(self, track, index=None):
+        if index is None:
+            index = track.index
+        acc = []
+        for otherTrack in self.tracks:
+            if otherTrack.hasParent():
+                if (otherTrack.getParentTrackName() == track.name) and (otherTrack.getParentTrackIndex() == index):
+                    acc.append(otherTrack) 
+        return acc
             
     def setHead(self):
         track = self.getCurrentTrack()
@@ -441,10 +501,31 @@ class ViewState(object):
             return "Something went wrong. Couldn't create new track. Aborting merge."
 
         destinationTrack.name = self.makeSubTrackName(sourceTrack)
-        destinationTrack.insertClip(sourceTrack.concatenate(fade=fade))
+        clips = []
+        destinationTrack.insertClip(sourceTrack.concatenate(fade=fade, clips=clips))
         return "Ok. Merged clips onto " + destinationTrack.getName()
 
         
+    def mergeTrack2(self, fade=False):
+        sourceTrack = self.getCurrentTrack()
+        if sourceTrack is None:
+            return "No track."
+
+        if sourceTrack.empty():
+            return "Track has no clips to merge."
+
+        if not(sourceTrack.isMergable()):
+            return "Tracks must contain only video clips, or only audio clips to be merged.This track seems to contain both."
+
+        self.newTrack()
+        destinationTrack = self.getCurrentTrack()
+        if destinationTrack is None:
+            return "Something went wrong. Couldn't create new track. Aborting merge."
+
+        destinationTrack.name = self.makeSubTrackName(sourceTrack)
+        clips = []
+        destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren))
+        return "Ok. Merged clips onto " + destinationTrack.getName()
         
         
 
@@ -865,6 +946,8 @@ class ViewState(object):
             return "Please create at least 1 track."
         w = track.getName()
         w += " at " + track.strIndex()
+        if track.hasParent():
+            w += " linked to " + track.getParentTrackName() + " at clip " + str(track.getParentTrackIndex())
         
         clip = self.getCurrentClip()
         if clip is None:
