@@ -957,7 +957,14 @@ class ViewState(object):
     def shiftFocus(self, pos):
         (x, y) = pos
         if self.currentTrack is None:
-            return "No tracks. Please create a new track by hitting n."
+            if self.tracks == []:
+                return "No tracks. Please create a new track by hitting n."
+            if y >= 0:
+                self.currentTrack = len(self.tracks) - 1
+            else:
+                self.currentTrack = 0
+            return self.getCurrentTrack().getDisplayName()
+            
 
         # sanity, this can come up due to workspace shenanigans
         if (self.currentTrack < 0) or (self.currentTrack >= len(self.tracks)):
