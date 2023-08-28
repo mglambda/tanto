@@ -46,14 +46,9 @@ class ViewState(object):
         self.smallTimeStep = 1 # in seconds
         self.largeTimeStep = 60 # in seconds
         self.volumeStep = 0.1
-
-        if self.projectdir:
-            self.loadDir(self.projectdir)
-
-
-            self.textmode = False
-            self.defaultTextHandler = lambda w: True
-            self.handleText = self.defaultTextHandler
+        self.textmode = False
+        self.defaultTextHandler = lambda w: True
+        self.handleText = self.defaultTextHandler
         self.cmds = {
             "q" : self.quit,
             "Q" : self.save,
@@ -118,14 +113,24 @@ class ViewState(object):
         for n in list(range(1, self.num_workspaces+1)):
             self.cmds["F"+str(n)] = lambda n=n: self.switchToWorkspace(n)
             self.cmds["CTRL+" + str(n)] = lambda n=n: self.sendTrack(n)
+
+        # finally, loading project
+        if self.projectdir:
+            self.loadDir(self.projectdir)
             
 
     def loadDir(self, dir):
         for file in glob.glob(dir + "/*"):
             if os.path.isdir(file):
                 nt = Track.fromDir(file)
+                nt.temporary = False
                 nt.loadVars(self.projectdir)
-                self.tracks.append(nt)
+                self.tracks.append(nt) # not a mistake
+                tmp = self.currentTrack
+                self.currentTrack = len(self.tracks) - 1
+                self.sendTrack(nt.workspacePreference)
+                self.currentTrack = tmp
+                
 
             else:
                 self.loadFile(file)
@@ -133,7 +138,7 @@ class ViewState(object):
             
     def loadFile(self, file):
         name = trackNameFromFile(file, "track " + str(len(self.tracks)))            
-        self.newTrack(name=name, audioOnly=isAudioFile(file))
+        self.newTrack(name=name, audioOnly=isAudioFile(file), temporary=False, file=file)
         track = self.getCurrentTrack()
         track.insertFile(file)
         track.left()
@@ -143,11 +148,26 @@ class ViewState(object):
         
     def save(self, file=None):
         pass
-        
+
+
+    def _allTracks(self):
+        acc = []
+        for (tracks, x) in list(self.workspaces.values()):
+            for track in tracks:
+                acc.append(track)
+        return acc + self.tracks
+
+    def storeTrackVars(self):
+        for track in list(filter(lambda t: not(t.temporary), self._allTracks())):
+            track.storeVars(self.projectdir)
+            
+            
+    
     def quit(self):
         if self.isPlaying():
             self.playPause()
-            
+
+        self.storeTrackVars()
         self.running = False
         return "bye"
 
@@ -888,6 +908,7 @@ class ViewState(object):
         self.workspaces[workspace] = (self.workspaces[workspace][0] + [track], otherCurrentTrack)
         del self.tracks[self.currentTrack]
         self.shiftFocus((0,-1))
+        track.workspacePreference = workspace
         return "Ok. Sent track to workspace " + str(workspace)
     
         
@@ -982,16 +1003,17 @@ class ViewState(object):
             
         return w
 
-    def newTrack(self, name=None, audioOnly=False):
+    def newTrack(self, name=None, audioOnly=False, temporary=True, file=None):
         if name is None:
             name = "track " + str(len(self.tracks))
             
-        self.appendTrack(Track(name=name, audioOnly=audioOnly))
+        self.appendTrack(Track(name=name, audioOnly=audioOnly, temporary=temporary, file=file))
         self.currentTrack = len(self.tracks)-1
         return "Ok"
 
 
     def appendTrack(self, track):
+        track.workspacePreference = self.currentWorkspace
         self.tracks.append(track)
         
 

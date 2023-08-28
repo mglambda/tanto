@@ -6,10 +6,12 @@ import copy
 
 class Track(object):
 
-    storable = "parent audioOnly index locked".split(" ")
-    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0):
+    storable = "parent audioOnly index offset locked workspacePreference".split(" ")
+    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True):
         self.file = file
         self.dir = dir
+        self.temporary = temporary
+        self.workspacePreference = workspacePreference
         self.locked = locked
         self.offset = offset
         self.parent = parent
@@ -95,6 +97,8 @@ class Track(object):
         if self.file:
             w += " *file*"
 
+        if self.temporary:
+            w = "& " + w
         return w
                 
 
@@ -166,6 +170,9 @@ class Track(object):
         
     
     def storeVars(self, projectdir):
+        if self.file:
+            return
+        
         dir = self.assertDir(projectdir)
         for key in Track.storable:
             filename = "." + key
@@ -182,6 +189,7 @@ class Track(object):
         if self.file:
             return
 
+        self.temporary = False
         self.storeVars(projectdir)
         dir = self.assertDir(projectdir)
         for i in range(len(self.data)):
