@@ -6,11 +6,12 @@ import copy
 
 class Track(object):
 
-    storable = "parent audioOnly index offset locked workspacePreference".split(" ")
-    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True):
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference".split(" ")
+    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None):
         self.file = file
         self.dir = dir
         self.temporary = temporary
+        self.parentAudioFactor = parentAudioFactor
         self.workspacePreference = workspacePreference
         self.locked = locked
         self.offset = offset
@@ -47,7 +48,11 @@ class Track(object):
         return not(self.parent is None)
 
         
+    def setParentAudioFactor(self, factor):
+        self.parentAudioFactor = factor
 
+    def getParentAudioFactor(self):
+        return self.parentAudioFactor
     
     def isAudioOnly(self):
         return self.audioOnly
@@ -292,6 +297,10 @@ class Track(object):
         videos = list(filter(isVideoClip, self.data))
         audios = list(filter(isAudioClip, self.data))
         return not(videos and audios)
+
+
+    def getDuration(self):
+        return sum([clip.duration for clip in self.data])
     
     def recConcatenate(self, findFunc=lambda trackname, trackindex: []):
         if not(self.isMergable()):
@@ -304,18 +313,24 @@ class Track(object):
         (aclips, vclips) = ([], [])
         curStart = 0
         for i in range(0, len(self.data)):
+            if isAudioClip(self.data[i]):
+                aclips.append(self.data[i].with_start(curStart))
+            else:
+                vclips.append(self.data[i].with_start(curStart))            
             children = findFunc(self, i)
             for childTrack in children:
+                factor = childTrack.getParentAudioFactor()
+                if not(factor is None):
+                    aclips = [clip.multiply_volume(factor, start_time=curStart+childTrack.getOffset(), end_time=curStart+childTrack.getOffset()+childTrack.getDuration()) for clip in aclips]
+                    vclips = [clip.multiply_volume(factor, start_time=curStart+childTrack.getOffset(), end_time=curStart+childTrack.getOffset()+childTrack.getDuration()) for clip in vclips]
+                       
                 if childTrack.isAudioOnly():
                     aclips += [clip.with_start(curStart + childTrack.getOffset()) for clip in childTrack.data]
                 else:
                     vclips += [clip.with_start(curStart + childTrack.getOffset()) for clip in childTrack.data]
                     
-            if isAudioClip(self.data[i]):
-                aclips.append(self.data[i].with_start(curStart))
-            else:
-                vclips.append(self.data[i].with_start(curStart))
-            curStart = self.data[i].duration
+
+            curStart += self.data[i].duration
 
         if self.isAudioOnly():
             return CompositeAudioClip(aclips + [clip.audio for clip in vclips])

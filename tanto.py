@@ -60,6 +60,7 @@ class ViewState(object):
             "!" : self.createSilenceClip,
             "§" : self.createVoiceOver,
             "$" : lambda: self.createVoiceOver(file=True),
+            "ALT+v" : self.createVoiceOver2,
             ";" : self.renameTrack,
             "=" : self.setVolume,
             "SPACE" : self.playPause,
@@ -71,8 +72,10 @@ class ViewState(object):
             "ALT+c" : self.createCloneTrack,
             "m" : self.mergeTrack2,
             "M" : lambda: self.mergeTrack(fade=True),
-            "p" : self.mixAudio,
-            "P" : lambda: self.mixAudio(inPlace=True),
+            "i" : self.mixAudio,
+            "I" : lambda: self.mixAudio(inPlace=True),
+            "p" : lambda: self.setParentAudioFactor(self.quietFactor),
+            "P" : self.setParentAudioFactor,
             "CTRL+p" : lambda: self.shiftFocus((0, -1)),
             "CTRL+n" : lambda: self.shiftFocus((0, 1)),
             "CTRL+f" : lambda: self.shiftFocus((1, 0)),
@@ -284,7 +287,8 @@ class ViewState(object):
         if track is None:
             return "Something went wrong (no track??)"
 
-        nt = Track(name=sideTrackName(track.getName(), track.index),parent=(track.name, track.index))
+        mark = getMark(clip)
+        nt = Track(name=sideTrackName(track.getName(), track.index), parent=(track.name, track.index), offset=mark)
         self.tracks.insert(self.currentTrack+1, nt)
         self.shiftFocus((0, 1))
         self.head = nt
@@ -433,7 +437,38 @@ class ViewState(object):
             
         
         return "remove track"
-    
+
+    def setParentAudioFactor(self, factor=None):
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot set factor for parent audio: No track."
+
+        if not(track.hasParent()):
+            return "Cannot set parent audio: Track is not linked."
+
+        if not(factor is None):
+            track.setParentAudioFactor(factor)
+            return "Set parent audio factor to " + str(factor) + " for the duration of track " + track.getName()
+
+        def cont(p):
+            if p < 0.0:
+                self.tts.speak("Can't set volume to negative number. Please specify a positive decimal number, like 0.2 or 3.1")
+                return False
+
+            track = self.getCurrentTrack()
+            if track is None:
+                self.tts.speak("Something went wrong. No track found.")
+                return False
+
+            track.setParentAudioFactor(p)
+            self.cancelTextMode()
+            self.tts.speak("Ok. Will scale parent audio volume to" + str(p) + " times its original value for the duratino of this track.")
+            return True
+        
+        self.enableTextMode(self.makeFloatHandler(cont))
+        return "Please specify a volume multiplier as a decimal. 1.0 means no change, 0.0 is silence, 1.2 increases volume by 20%."
+
+        
     def mixAudio(self, inPlace=False):
         # get the audio from subclip between mark and seekpos, and mix it into the audio of the clip at HEAD
         # if the mixed-in audio clip is longer than clip at head, it is cropped
@@ -716,6 +751,35 @@ class ViewState(object):
 
 
         mark = getMark(clip)
+
+    def createVoiceOver2(self):
+        # this just uses some moviepy2 features and uses linked tracks
+        # will scale down volume by self.quietFactor by default
+        # you can emulate the behaviour of this function by going ALT+l, ", <ENTER MESSAGE>, P 0.2
+        # put in another factor than 0.2 for different volume scaling
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot create voice over: No track selected."
+
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Cannot create voice over without a clip to speak over."
+
+        self.createLinkTrack()
+        link = self.getCurrentTrack()
+        def cont():
+            self.setParentAudioFactor(self.quietFactor)
+            self.tts.speak("Created voice over track " + link.getName() + " with audio factor " + str(self.quietFactor) + ". Merge the parent to see the result.")
+            return True
+            
+        return self.createVoiceClip(cont=cont)
+
+        
+        
+        
+        
+        
+        
         
         def handle(w):
             if not(w):
@@ -784,7 +848,7 @@ class ViewState(object):
         self.enableTextMode(self.makeFloatHandler(cont))
         return "Please enter the duration of silence in seconds. Enter to confirm, escape to cancel."
             
-    def createVoiceClip(self):
+    def createVoiceClip(self, cont=None):
         # get text input, then, make a voice over wav file, and add it to the current head position
         if self.head:
             track = self.head
@@ -796,6 +860,8 @@ class ViewState(object):
             clip = makeVoiceClip(w)
             track.insertClip(clip)
             self.cancelTextMode()
+            if cont:
+                return cont()
             return True #delete text
 
         self.enableTextMode(handleVoiceMessage)
