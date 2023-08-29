@@ -161,7 +161,9 @@ class ViewState(object):
     def _getClipboard(self):
         return self.clipboard
 
-    def _putClipBoard(self, clip):
+    def _putClipboard(self, clip):
+        if self.clipboard is not None:
+            self.graveyard.insertClip(self.clipboard)
         self.clipboard = clip
         
     
@@ -438,17 +440,19 @@ class ViewState(object):
         if track is None:
             return "Cannot " + verb + ": No track!"
 
-        if track.isLocked():
+        if (copy == False) and (track.isLocked()):
             return "Cannot " + verb + " clip because track is locked."
         
         clip = self.getCurrentClip()
         if clip is None:
             return "Cannot " + verb + " clip: No clip!"
 
-
+        if getMark(clip) == getSeekPos(clip):
+            return "Refusing to " + verb + " due to nonsense mark position."
+        
         (before, middle, after) = self.getCurrentTrisection()
 
-        self.clipboard = middle
+        self._putClipboard(middle)
         if copy:
             return "Copied clip with duration " + showMark(middle.duration)
         
