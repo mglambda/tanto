@@ -460,6 +460,7 @@ class ViewState(object):
         # happens in two cases 1) pos=0, mark=end, 2) pos=0, mark=0, i.e. clip hasn't been touched
         if ((before.duration == 0) and (after.duration == 0)) or ((getMark(clip) == 0) and (getSeekPos(clip) == 0)):
             track.remove()
+
             return "Cut clip."
 
         if isAudioClip(clip):

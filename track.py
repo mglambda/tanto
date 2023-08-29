@@ -274,7 +274,9 @@ class Track(object):
             return
                          
         del self.data[self.index]
-        self.left()
+        #        self.left()
+        if self.index >= len(self.data):
+            self.index = len(self.data) - 1
         if self.empty():
             self.index = None
             return
