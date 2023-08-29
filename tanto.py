@@ -162,7 +162,7 @@ class ViewState(object):
         return acc + self.tracks
 
     def _nameExists(self, trackname):
-        return list(filter(lambda otherName: trackname == otherName[track.getName() for track in self._allTracks()])) != []
+        return list(filter(lambda otherName: trackname == otherName, [track.getName() for track in self._allTracks()])) != []
         
     
     def storeTrackVars(self):
