@@ -292,7 +292,7 @@ class ViewState(object):
             return "Something went wrong (no track??)"
 
         mark = getMark(clip)
-        nt = Track(name=sideTrackName(track.getName(), track.index), parent=(track.name, track.index), offset=mark, workspacePreference=self.currentWorkspace)
+        nt = Track(name=self.makeSideTrackName(track, track.index), parent=(track.name, track.index), offset=mark, workspacePreference=self.currentWorkspace)
         self.tracks.insert(self.currentTrack+1, nt)
         self.shiftFocus((0, 1))
         self.head = nt
@@ -557,8 +557,8 @@ class ViewState(object):
                 return name
             name = sideTrackName(name)
 
-    def makeSideTrackName(self, track):
-        name = sideTrackName(track.getName())
+    def makeSideTrackName(self, track, index=None):
+        name = sideTrackName(track.getName(), index)
         allNames = [track.getName() for track in self._allTracks()]
         while True:
             if not(name in allNames):
