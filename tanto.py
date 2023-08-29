@@ -161,6 +161,10 @@ class ViewState(object):
                 acc.append(track)
         return acc + self.tracks
 
+    def _nameExists(self, trackname):
+        return list(filter(lambda otherName: trackname == otherName[track.getName() for track in self._allTracks()])) != []
+        
+    
     def storeTrackVars(self):
         for track in list(filter(lambda t: not(t.temporary), self._allTracks())):
             track.storeVars(self.projectdir)
@@ -288,7 +292,7 @@ class ViewState(object):
             return "Something went wrong (no track??)"
 
         mark = getMark(clip)
-        nt = Track(name=sideTrackName(track.getName(), track.index), parent=(track.name, track.index), offset=mark)
+        nt = Track(name=sideTrackName(track.getName(), track.index), parent=(track.name, track.index), offset=mark, workspacePreference=self.currentWorkspace)
         self.tracks.insert(self.currentTrack+1, nt)
         self.shiftFocus((0, 1))
         self.head = nt
@@ -547,7 +551,7 @@ class ViewState(object):
 
     def makeSubTrackName(self, track):
         name = subTrackName(track.getName())
-        allNames = list(map(lambda t: t.getName(), self.tracks))
+        allNames = [track.getName() for track in self._allTracks()]
         while True: # we *will* name this
             if not(name in allNames):
                 return name
@@ -555,7 +559,7 @@ class ViewState(object):
 
     def makeSideTrackName(self, track):
         name = sideTrackName(track.getName())
-        allNames = list(map(lambda t: t.getName(), self.tracks))
+        allNames = [track.getName() for track in self._allTracks()]
         while True:
             if not(name in allNames):
                 return name
