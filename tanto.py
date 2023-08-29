@@ -39,6 +39,7 @@ class ViewState(object):
         self.tracks = [self.graveyard]
         self.head = None
         self.currentTrack = None
+        self.clipboard = None
         self.video_flag = threading.Event()
         self.audio_flag = threading.Event()
 
@@ -66,6 +67,9 @@ class ViewState(object):
             "SPACE" : self.playPause,
             "x" : self.setHead,
             "X" : self.whereIsHead,
+            "CTRL+x" : self.cutClip,
+            "CTRL+c" : lambda: self.cutClip(copy=True),
+            "CTRL+v" : self.paste,
             "v" : self.bisect,
             "V" : lambda: self.bisect(inPlace=True),
             "c" : self.copyToHead,
@@ -154,6 +158,13 @@ class ViewState(object):
         pass
 
 
+    def _getClipboard(self):
+        return self.clipboard
+
+    def _putClipBoard(self, clip):
+        self.clipboard = clip
+        
+    
     def _allTracks(self):
         acc = []
         for (tracks, x) in list(self.workspaces.values()):
@@ -364,7 +375,7 @@ class ViewState(object):
         preclip = clip.subclip(0, begin)
         sclip = clip.subclip(begin, end)
         if end >= clip.duration:
-            afterclip = clip
+            afterclip = clip.subclip(0,0)
         else:
             afterclip = clip.subclip(end)
         return (preclip, sclip, afterclip)
@@ -418,6 +429,63 @@ class ViewState(object):
         return "Ok. Clip moved to graveyard."
         
 
+    def cutClip(self, copy=False):
+        verb = "cut"
+        if copy:
+            verb = "copy"
+            
+        track = self.getCurrentTrack()
+        if track is None:
+            return "Cannot " + verb + ": No track!"
+
+        if track.isLocked():
+            return "Cannot " + verb + " clip because track is locked."
+        
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Cannot " + verb + " clip: No clip!"
+
+
+        (before, middle, after) = self.getCurrentTrisection()
+
+        self.clipboard = middle
+        if copy:
+            return "Copied clip with duration " + showMark(middle.duration)
+        
+        # leave nothing behind if entire clip is cut
+        # happens in two cases 1) pos=0, mark=end, 2) pos=0, mark=0, i.e. clip hasn't been touched
+        if ((before.duration == 0) and (after.duration == 0)) or ((getMark(clip) == 0) and (getSeekPos(clip) == 0)):
+            track.remove()
+            return "Cut clip."
+
+        if isAudioClip(clip):
+            newClip = CompositeAudioClip([before, after.with_start(before.end)])
+        else:
+            newClip = CompositeVideoClip([before, after.with_start(before.end)])
+
+        track.remove()
+        track.insertClip(newClip)
+        return "Cut " + showMark(middle.duration) + " from clip."
+        
+
+    def paste(self):
+        clip = self._getClipboard()
+        if clip is None:
+            return "Clipboard is empty."
+
+        track = self.getCurrentTrack()
+        if track is None:
+            return "No track to paste into! Maybe create a new one?"
+
+        track.insertClip(resetClipPositions(clip))
+        return "Pasted clip with " + showMark(clip.duration) + " into " + track.getName()
+    
+        
+        
+        
+        
+        
+    
     def removeTrack(self):
         track = self.getCurrentTrack()
         if track is None:
