@@ -25,12 +25,14 @@ from moviepy.editor import *
 from speak import Speaker
 from track import Track
 from tanto_utility import *
+from tanto_gui import *
 
 
 
 class ViewState(object):
-    def __init__(self, tts=None, projectdir="./", textinput=None):
+    def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None):
         self.debug = True
+        self.ui = TantoGui(res=res, manager=ui)
         self.clock = pygame.time.Clock()
         self.textinput = textinput
         self.projectdir = projectdir
@@ -1347,7 +1349,12 @@ class ViewState(object):
         
             
 
+    def updateUI(self):
+        self.ui.drawWorkspaces(self.currentWorkspace, self.workspaces)
+        self.ui.drawTracks(self.tracks, self.getCurrentTrack(), self.getCurrentClip())
+        
 
+    
 def getKeyRepresentation(event):
     # we like keys as simple strings with all modifiers like so "CTRL+ALT+ENTER" etc.
     w = ""
@@ -1386,7 +1393,7 @@ def main(argv):
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 
-    st = ViewState(tts=Speaker(), projectdir=projectdir, textinput=textinput)     
+    st = ViewState(tts=Speaker(), res=(xres, yres), ui=pygame_gui.UIManager((xres, yres)), projectdir=projectdir, textinput=textinput)     
     while st.running:
         time_delta = clock.tick(60)/1000.0
         events = pygame.event.get()
@@ -1428,7 +1435,12 @@ def main(argv):
             if event.type == QUIT:
                 st.quit()
 
+            st.ui.manager.process_events(event)
 
+
+        st.updateUI()
+        st.ui.manager.update(time_delta)
+        st.ui.manager.draw_ui(screen)            
         screen.fill(pygame.color.THECOLORS["black"])
         pygame.display.update()
         
