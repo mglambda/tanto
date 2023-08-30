@@ -353,7 +353,7 @@ class ViewState(object):
             return "Something went wrong (no track??)"
 
         mark = getMark(clip)
-        nt = Track(name=self.makeSideTrackName(track, track.index), parent=(track.name, track.index), offset=mark, workspacePreference=self.currentWorkspace)
+        nt = Track(name=self.makeLinkTrackName(track, track.index), parent=(track.name, track.index), offset=mark, workspacePreference=self.currentWorkspace)
         self.tracks.insert(self.currentTrack+1, nt)
         self.shiftFocus((0, 1))
         self.head = nt
@@ -686,6 +686,20 @@ class ViewState(object):
                 return name
             name = sideTrackName(name)
                     
+                
+    def makeLinkTrackName(self, track, index=None):
+#        name = sideTrackName(track.getName(), index)
+        name = makeNatoName(str(index), natoPrefixForLetter("a"), track.getName())
+        allNames = [track.getName() for track in self._allTracks()]
+        initial = name
+        while True:
+            if not(name in allNames):
+                return name
+            name = subTrackName(name)
+            if name == initial:
+                # prevent infinite loop
+                name = extendNato(name, natoPrefixForLetter("a"))
+                initial = name
                 
 
 

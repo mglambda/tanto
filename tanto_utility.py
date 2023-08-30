@@ -186,7 +186,12 @@ def nextNato(natostring):
 
 def randomNato():
     return random.choice(nato_alphabet)
-    
+
+def extendNato(name, nextNato):
+    # 21-whiskey-somenameblabla -> 21-alpha-whiskey-somenameblabla
+    (number, nato, rest) = getNamePrefixes(name)    
+    return name_delim.join([number, nextNato, nato, rest])
+
 def subTrackName(name):
     (number, nato, rest) = getNamePrefixes(name)
     return makeNatoName(number, nextNato(nato), rest)
