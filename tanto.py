@@ -31,6 +31,7 @@ from tanto_utility import *
 class ViewState(object):
     def __init__(self, tts=None, projectdir="./", textinput=None):
         self.debug = True
+        self.clock = pygame.time.Clock()
         self.textinput = textinput
         self.projectdir = projectdir
         self.running = True
@@ -69,6 +70,7 @@ class ViewState(object):
             ";" : self.renameTrack,
             "=" : self.setVolume,
             "SPACE" : self.playPause,
+            "CTRL+SPACE" : lambda: self.playPause(seekOnPause=True),
             "x" : self.setHead,
             "X" : self.whereIsHead,
             "CTRL+x" : self.cutClip,
@@ -1299,12 +1301,16 @@ class ViewState(object):
     def isPlaying(self):
         return self.video_flag.is_set()
 
-    def playPause(self):
+    def playPause(self, seekOnPause=False):
         # check if we're currently playing
         if self.video_flag.is_set():
             self.video_flag.clear()
             self.video_flag = threading.Event()
             self.audio_flag = threading.Event()
+            if seekOnPause:
+                if self.playclip is None:
+                    return "" # sanity
+                return self.seek(self.playseekpos + self.clock.tick(self.playclip.fps) / 1000)
             return ""
         
 
@@ -1315,9 +1321,10 @@ class ViewState(object):
 
         if getSeekPos(clip) >= clip.duration:
             return "End of clip."
-        
+
+        self.playseekpos = getSeekPos(clip) # this is only for seekOnPause
         clip = clip.subclip(getSeekPos(clip))
-        fps=15
+        #fps=15
         audio_fps=22050
         audio_buffersize=3000
         audio_nbytes=2
@@ -1331,6 +1338,8 @@ class ViewState(object):
         audiothread.start()
         self.video_flag.set()
         self.audio_flag.wait()
+        self.playtime = self.clock.tick(clip.fps) / 1000
+        self.playclip = clip
         
         
         return ""
@@ -1377,8 +1386,7 @@ def main(argv):
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 
-    st = ViewState(tts=Speaker(), projectdir=projectdir, textinput=textinput)
-    
+    st = ViewState(tts=Speaker(), projectdir=projectdir, textinput=textinput)     
     while st.running:
         time_delta = clock.tick(60)/1000.0
         events = pygame.event.get()
