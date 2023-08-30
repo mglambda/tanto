@@ -40,6 +40,7 @@ class ViewState(object):
         self.head = None
         self.currentTrack = None
         self.clipboard = None
+        self.saveMark = None
         self.video_flag = threading.Event()
         self.audio_flag = threading.Event()
 
@@ -56,7 +57,10 @@ class ViewState(object):
             "ENTER" : self.setMark,
             "ALT+ENTER" : self.setHeadOffset,
             "BACKSPACE" : self.jumpToMark,
-            "e" : self.setMarkEnd,
+            "CTRL+e" : lambda: self.seekPercentage(100),
+            "ALT+e" : self.setMarkEnd,
+            "CTRL+a" : lambda: self.seekPercentage(0),
+            "ALT+a" : self.setMarkStart,
             '"' : self.createVoiceClip,
             "!" : self.createSilenceClip,
             "§" : self.createVoiceOver,
@@ -69,7 +73,9 @@ class ViewState(object):
             "X" : self.whereIsHead,
             "CTRL+x" : self.cutClip,
             "CTRL+c" : lambda: self.cutClip(copy=True),
+            "y" : self.saveMark,
             "CTRL+v" : self.paste,
+            "CTRL+y" : self.pasteMark,
             "v" : self.bisect,
             "V" : lambda: self.bisect(inPlace=True),
             "c" : self.copyToHead,
@@ -90,8 +96,8 @@ class ViewState(object):
             "-" : lambda: self.changeVolume((-1) * self.volumeStep),
             "S" : self.saveClip,
             "_" : self.saveTrack,
-            "r" : self.removeClip,
-            "CTRL+r" : self.removeTrack,
+            "CTRL+d" : self.removeClip,
+            "ALT+d" : self.removeTrack,
             "CTRL+l" : self.toggleLock,
             "ALT+l" : self.createLinkTrack,
             "<" : self.minFocus,
@@ -112,6 +118,7 @@ class ViewState(object):
 
         for n in list(range(0,10)):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
+            self.cmds["ALT+" + str(n)] = lambda n=n: self.setMarkPercentage(n*10)
 
         # workspaces
         self.num_workspaces = 4
@@ -194,8 +201,33 @@ class ViewState(object):
 
 
 
-    
-    
+
+    def saveMark(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Cannot save mark: No clip!"
+
+        self.saveMark = getMark(clip)
+        return "Saved mark " + showMark(mark)
+
+    def pasteMark(self):
+        track = self.getCurrentTrack()
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "Need a clip to paste mark onto."
+
+        mark = self.saveMark
+        if mark is None:
+            return "No mark to paste."
+
+        setMark(clip, mark)
+        return "Set mark to " + showMark(mark)
+        
+
+
+        
+        
+        
     def setMark(self, pos=None):
         clip = self.getCurrentClip()
         if clip is None:
@@ -205,12 +237,28 @@ class ViewState(object):
         setMark(clip, pos)
         return "Mark set at " + toTimecode(getMark(clip))
 
+
+    def setMarkPercentage(self, p):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+
+        t = clip.duration * (p/100.0)
+        return self.setMark(t)
+    
+    
     def setMarkEnd(self):
         clip = self.getCurrentClip()
         if clip is None:
             return "No clip!"
         return self.setMark(pos=clip.end)
 
+    def setMarkStart(self):
+        clip = self.getCurrentClip()
+        if clip is None:
+            return "No clip!"
+        return self.setMark(clip.start)
+    
     def whereMark(self):
         clip = self.getCurrentClip()
         if clip is None:
