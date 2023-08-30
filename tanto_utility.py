@@ -291,3 +291,13 @@ def showMark(mark):
 
 def padZero(w, num_zeroes=10):
     return "0"*(num_zeroes - len(w)) + w
+
+
+def inWindow(n, window=(0,0)):
+    (a, b) = window
+    return (n >= a) and (n < b)
+
+def moveWindow(n, window):
+    (a, b) = window
+    return (a+n, b+n)
+    

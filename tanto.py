@@ -33,6 +33,7 @@ class ViewState(object):
     def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None):
         self.debug = True
         self.ui = TantoGui(res=res, manager=ui)
+        self.lastMsg = ""
         self.clock = pygame.time.Clock()
         self.textinput = textinput
         self.projectdir = projectdir
@@ -112,6 +113,7 @@ class ViewState(object):
             "d" : lambda: self.shiftFocus((1,0)),
             "n" : self.newTrack,
             "h" : self.whereAmI,
+            "H" : self.printDebug,
             "t" : self.whereMark,
             "^" : lambda: self.stepFactor(0.1),
             "´" : lambda: self.stepFactor(10),
@@ -194,7 +196,16 @@ class ViewState(object):
             track.storeVars(self.projectdir)
             
             
+
+    def printDebug(self):
+        if not(self.debug ):
+            return ""
+
+        self.ui._debug()
+        return "Printed debug information to standard output."
     
+        
+            
     def quit(self):
         if self.isPlaying():
             self.playPause()
@@ -1350,8 +1361,11 @@ class ViewState(object):
             
 
     def updateUI(self):
-        self.ui.drawWorkspaces(self.currentWorkspace, self.workspaces)
-        self.ui.drawTracks(self.tracks, self.getCurrentTrack(), self.getCurrentClip())
+        override = None
+        if self.isTextMode():
+            override = self.textinput
+        self.ui.drawEverything(self.currentWorkspace, self.workspaces, self.lastMsg, self.currentTrack, self.tracks, override=override)
+
         
 
     
@@ -1393,12 +1407,12 @@ def main(argv):
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 
-    st = ViewState(tts=Speaker(), res=(xres, yres), ui=pygame_gui.UIManager((xres, yres)), projectdir=projectdir, textinput=textinput)     
+    st = ViewState(tts=Speaker(), res=(xres, yres), ui=pygame_gui.UIManager((xres, yres), "theme.json"), projectdir=projectdir, textinput=textinput)     
     while st.running:
         time_delta = clock.tick(60)/1000.0
         events = pygame.event.get()
         textinput.update(events)
-        screen.blit(textinput.surface, (10, yres-20))        
+#        screen.blit(textinput.surface, (10, yres-20))        
         for event in events:
             if event.type == KEYDOWN:
                 if st.isTextMode():
@@ -1428,6 +1442,8 @@ def main(argv):
                         msg = "exception"
 
                     if msg:
+                        st.lastMsg = msg                        
+                        st.updateUI()                        
                         st.tts.speak(msg)
                         if not(st.isTextMode()):
                             textinput.value = msg
@@ -1438,7 +1454,7 @@ def main(argv):
             st.ui.manager.process_events(event)
 
 
-        st.updateUI()
+
         st.ui.manager.update(time_delta)
         st.ui.manager.draw_ui(screen)            
         screen.fill(pygame.color.THECOLORS["black"])
