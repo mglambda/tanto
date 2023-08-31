@@ -42,6 +42,8 @@ class ViewState(object):
         self.graveyard = Track(name="graveyard", locked=True)
         self.tracks = [self.graveyard]
         self.head = None
+        self.headOverride = False
+        self.specialOverrideMsg = "Override..."
         self.currentTrack = None
         self.clipboard = None
         self.saveMark = None
@@ -59,6 +61,7 @@ class ViewState(object):
             "q" : self.quit,
             "Q" : self.save,
             "ENTER" : self.setMark,
+            "TAB" : self.switchHead,
             "ALT+ENTER" : self.setHeadOffset,
             "BACKSPACE" : self.jumpToMark,
             "CTRL+e" : lambda: self.seekPercentage(100),
@@ -74,8 +77,9 @@ class ViewState(object):
             "=" : self.setVolume,
             "SPACE" : self.playPause,
             "CTRL+SPACE" : lambda: self.playPause(seekOnPause=True),
-            "x" : self.setHead,
-            "X" : self.whereIsHead,
+            "j" : self.setHead,
+            "J" : self.whereIsHead,
+            "CTRL+j" : self.toggleHeadOverride,
             "CTRL+x" : self.cutClip,
             "CTRL+c" : lambda: self.cutClip(copy=True),
             "y" : self.saveMark,
@@ -341,6 +345,20 @@ class ViewState(object):
             w += "new track "
         return w + newTrack.getName()
 
+
+    def findTrackIndices(self, track):
+        # return pair of (trackindex, workspaceindex)
+        for (k, tracks) in self.workspaces.items():
+            if k == self.currentWorkspace:
+                tracks = self.tracks
+
+            for i in range(0, len(tracks)):
+                if tracks[i] == track:
+                    return (i, k)
+        return None
+            
+            
+   
     def findTrack(self, trackname):
         tracks = list(filter(lambda t: t.name == trackname, self.tracks))
         if tracks == []:
@@ -400,7 +418,42 @@ class ViewState(object):
         self.head = track
         return "Head is now at " + self.strHead()
 
+    def toggleHeadOverride(self):
+        self.headOverride = not(self.headOverride)
+        return self.specialOverrideMsg
 
+    def disableHeadOverride(self):
+        self.headOverride = False
+
+    def switchHead(self):
+        # switches position with head
+        # it should hod that "Tab TAB" is an identity, i.e. you end up where you started
+        if self.head is None:
+            return "Head is not set."
+
+        prev = self.getCurrentTrack()
+        res = self.findTrackIndices(self.head)
+        if res is None:
+            return "Cannot find track to switch to."
+
+        (headIndex, headWorkspace) = res
+        self.currentTrack = headIndex
+        self.currentWorkspace = headWorkspace
+        self.head = prev
+        if self.head.index is not None:
+            w = "to " + self.head.strIndex() + " in"
+        else:
+            w = ""
+            
+        return "Tabbed to head at " + w + " " + self.head.getName()
+    
+        
+        
+        
+        
+                
+                
+            
     def strHead(self):
         if self.head is None:
             return "none"
@@ -1211,7 +1264,13 @@ class ViewState(object):
 
 
     def getCurrentTrack(self):
+        if self.headOverride:
+            return self.head
+            
         if self.currentTrack is None:
+            return None
+
+        if (self.currentTrack < 0) or (self.currentTrack >= len(self.tracks)):
             return None
 
         return self.tracks[self.currentTrack]
@@ -1254,6 +1313,7 @@ class ViewState(object):
 
     def getCurrentClip(self):
         track = self.getCurrentTrack()
+            
         if track:
             return track.get()
         return None
@@ -1441,9 +1501,11 @@ def main(argv):
                         logging.error(traceback.format_exc())
                         msg = "exception"
 
+                    st.updateUI()
+                    if msg != st.specialOverrideMsg:
+                        st.disableHeadOverride() # ctrl+j is for one command only
                     if msg:
                         st.lastMsg = msg                        
-                        st.updateUI()                        
                         st.tts.speak(msg)
                         if not(st.isTextMode()):
                             textinput.value = msg
