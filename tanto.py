@@ -26,7 +26,7 @@ from speak import Speaker
 from track import Track
 from tanto_utility import *
 from tanto_gui import *
-
+import _interactive
 
 
 class ViewState(object):
@@ -57,6 +57,10 @@ class ViewState(object):
         self.textmode = False
         self.defaultTextHandler = lambda w: True
         self.handleText = self.defaultTextHandler
+        
+        # FIXME: this doesn't need to happen in the constructor, but since this is basically a signleton, we extend here for naming convenience (so we can use 'self')
+        _interactive.extend(self)
+
         self.cmds = {
             "q" : self.quit,
             "Q" : self.save,
@@ -528,7 +532,9 @@ class ViewState(object):
             return "Track unlocked."
         track.lock()
         return "Track locked."
-       
+
+
+    
     def removeClip(self):
         track = self.getCurrentTrack()
         if track is None:
@@ -886,25 +892,6 @@ class ViewState(object):
         
 
 
-    def renameTrack(self):
-        track = self.getCurrentTrack()
-        if track is None:
-            return "Sorry, no track currently selected to rename."
-
-        def handle(w):
-            if not(w):
-                self.tts.speak("Please enter a new name for the track.")
-                return False
-            track.name = w
-            self.tts.speak("Ok. Renamed track to " + w)
-            self.cancelTextMode()
-            return True
-
-        self.enableTextMode(handle)
-        #        self.textinput.value = track.name                    
-        return "Please enter a new name for the track. Enter to confirm, escape to exit."
-            
-        
     
     def setVolume(self):
         clip = self.getCurrentClip()
@@ -1425,6 +1412,7 @@ class ViewState(object):
         if self.isTextMode():
             override = self.textinput
         self.ui.drawEverything(self.currentWorkspace, self.workspaces, self.lastMsg, self.currentTrack, self.tracks, override=override)
+
 
         
 
