@@ -5,6 +5,7 @@
 import sys, os, glob, threading, multiprocessing, time
 import traceback
 import logging
+from unittest.mock import Mock
 
 # Disable print
 def blockPrint():
@@ -29,7 +30,7 @@ from tanto_gui import *
 import _interactive
 import _keybindings
 
-
+TANTO_VERSION = "0.1.0"
 class ViewState(object):
     def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None):
         self.debug = True
@@ -147,6 +148,7 @@ class ViewState(object):
             
             
 
+            
     def printDebug(self):
         if not(self.debug ):
             return ""
@@ -1380,8 +1382,40 @@ def getKeyRepresentation(event):
     # FIXME: do shift?
     
     return w + keystring
-    
+
+
+
+
+def makeHelpText():
+    w = "tanto - lightweight, accessible audio and video editor\nversion " + TANTO_VERSION + "\n\n"
+    w += "Usage:\n  tanto /path/to/dir\nOpen tanto in directory, loading all files and tracks in the directory.\n tanto\nInvoked without argument, will assume the current directory to be the working directory.\n  tanto -h\nPrint this help.\n\ntanto doesn't work with project files. Tanto works with files and directories. You may want to create a 'project directory', by creating a new directory and copying video and audio files you wish to edit into it, then invoking tanto with the directory as argument.\n\nBelow is a list of keybindings and commands inside tanto.\n"
+    cats = _keybindings.categories
+    d = {c : [] for c in cats}
+    d[_keybindings.C_SEEK].append(("0-9", "Seek to position at nth-percentile of clip. So 1 jumps to 10%, 5 to 50% and so on. 0 is a synonym for CTRL+a."))
+    d[_keybindings.C_WORKSPACE].append(("F1 - F10", "Switch to workspace."))
+    d[_keybindings.C_WORKSPACE].append(("CTRL+0-9", "Send selected track to nth workspace. So CTRL+1 sends a track to workspace 1, accessible with F1, CTRL+5 workspace 5, and so on."))
+    for (key, f, c, v) in _keybindings.stdKeybindings(Mock()):
+        d[c].append((key, v))
+
+    for cat in cats:
+        w += "["+cat+"]\n"
+        indent = 10
+        for (key, desc) in d[cat]:
+            padding = " " * (indent - len(key))
+
+            w += "  " + key + padding + " - " + desc + "\n"
+        w += "\n"
+    return w
+
+
+
 def main(argv):
+    if len(argv) >= 2:
+        if (argv[1] == "-h") or (argv[1] == "--help"):
+            print(makeHelpText())
+            return
+    
+
     (xres, yres) = (1024, 768)
 
     buffer = 2 * 2048
@@ -1394,6 +1428,7 @@ def main(argv):
     textinput = pygame_textinput.TextInputVisualizer()    
     projectdir = None    
     if len(argv) == 2:
+        
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 

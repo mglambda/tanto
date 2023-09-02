@@ -2,6 +2,7 @@
 
 
 # categories
+
 C_PROGRAM = "Program"
 C_NAVIGATION = "Navigation"
 C_EDIT = "Editing"
@@ -11,8 +12,9 @@ C_AUDIO ="Audio and Sound"
 C_TRACK = "Tracks"
 C_WORKSPACE = "Workspaces"
 
+categories = [C_PROGRAM, C_NAVIGATION, C_SEEK, C_EDIT, C_TRACK, C_AUDIO, C_EFFECT, C_WORKSPACE]
 
-def stdKeybindings(self):
+def stdKeybindings(self=None):
     xs = [
         ("q", self.quit,
          C_PROGRAM, "quit without saving."),
@@ -21,7 +23,7 @@ def stdKeybindings(self):
         ("Q", self.save,
          C_PROGRAM, "save unsaved tracks (FIXME: not working atm)."),
         ("ENTER", self.setMark,
-         C_EDIT, "set the mark to the current seek position in the selected clip. The mark is saved on a per clip basis, and are used by various other editing commands."),
+         C_EDIT, "set the mark to the current seek position in the selected clip. Marks are saved on a per clip basis, and are used by various other editing commands."),
         ("TAB", self.switchHead,
          C_NAVIGATION, "exchange position of head and selected track. Can be used to switch to tracks and get back where you were quickly."),
         ("ALT+ENTER", self.setHeadOffset,
@@ -49,7 +51,7 @@ def stdKeybindings(self):
         (";", self.renameTrack,
          C_TRACK, "rename the selected track."),
         ("=", self.setVolume,
-         C_EDIT, "change the volume of the selected clip. Volume is scaled by a provided factor."),
+         C_AUDIO, "change the volume of the selected clip. Volume is scaled by a provided factor."),
         ("SPACE", self.playPause,
          C_SEEK, "start or stop playback of selected clip. Note: Hitting space will send you back to your previous seek location. Use CTRL+SPACE if you want to resume playback from your current location after playback."),
         ("CTRL+SPACE", lambda: self.playPause(seekOnPause=True),
