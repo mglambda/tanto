@@ -16,6 +16,8 @@ def stdKeybindings(self):
     xs = [
         ("q", self.quit,
          C_PROGRAM, "quit without saving."),
+        ("?", self.keyInfo,
+         C_PROGRAM, "hit a key or key combo to hear its function."),
         ("Q", self.save,
          C_PROGRAM, "save unsaved tracks (FIXME: not working atm)."),
         ("ENTER", self.setMark,

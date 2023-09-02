@@ -67,10 +67,7 @@ class ViewState(object):
             self.cmds[key] = f
             self.help[key] = (category, shortdesc)
             
-            
 
-
- 
         for n in list(range(0,10)):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
             self.help[str(n)] = (_keybindings.C_SEEK, "seek to " + str(n*10) + "% of selected clip.")
