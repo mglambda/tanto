@@ -62,15 +62,20 @@ class ViewState(object):
         # FIXME: this doesn't need to happen in the constructor, but since this is basically a signleton, we extend here for naming convenience (so we can use 'self')
         _interactive.extend(self)
         self.cmds = {}
-        for (key, f) in _keybindings.stdKeybindings(self):
+        self.help={}
+        for (key, f, category, shortdesc) in _keybindings.stdKeybindings(self):
             self.cmds[key] = f
+            self.help[key] = (category, shortdesc)
+            
             
 
 
  
         for n in list(range(0,10)):
             self.cmds[str(n)] = lambda n=n: self.seekPercentage(n*10)
+            self.help[str(n)] = (_keybindings.C_SEEK, "seek to " + str(n*10) + "% of selected clip.")
             self.cmds["ALT+" + str(n)] = lambda n=n: self.setMarkPercentage(n*10)
+            self.help["ALT+"+str(n)] = (_keybindings.C_EDIT, "set the mark at " + str(n*10) + "% of the selected clip.")
 
         # workspaces
         self.num_workspaces = 4
@@ -79,7 +84,9 @@ class ViewState(object):
         
         for n in list(range(1, self.num_workspaces+1)):
             self.cmds["F"+str(n)] = lambda n=n: self.switchToWorkspace(n)
+            self.help["F"+str(n)] = (_keybindings.C_WORKSPACE, "switch to workspace " + str(n) + ".")
             self.cmds["CTRL+" + str(n)] = lambda n=n: self.sendTrack(n)
+            self.help["CTRL+"+str(n)] = (_keybindings.C_WORKSPACE, "send selected track to workspace " + str(n) + ".")
 
         # finally, loading project
         if self.projectdir:
