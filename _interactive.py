@@ -99,7 +99,7 @@ def pasteMark(self):
 
 
 
-def setMark(self, pos=None):
+def interactiveSetMark(self, pos=None):
     clip = self.getCurrentClip()
     if clip is None:
         return "No clip!"
@@ -115,20 +115,20 @@ def setMarkPercentage(self, p):
         return "No clip!"
 
     t = clip.duration * (p/100.0)
-    return self.setMark(t)
+    return self.interactiveSetMark(t)
 
 
 def setMarkEnd(self):
     clip = self.getCurrentClip()
     if clip is None:
         return "No clip!"
-    return self.setMark(pos=clip.end)
+    return self.interactiveSetMark(pos=clip.end)
 
 def setMarkStart(self):
     clip = self.getCurrentClip()
     if clip is None:
         return "No clip!"
-    return self.setMark(clip.start)
+    return self.interactiveSetMark(clip.start)
 
 def whereMark(self):
     clip = self.getCurrentClip()

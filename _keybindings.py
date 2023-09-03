@@ -22,7 +22,7 @@ def stdKeybindings(self=None):
          C_PROGRAM, "hit a key or key combo to hear its function."),
         ("Q", self.save,
          C_PROGRAM, "save unsaved tracks (FIXME: not working atm)."),
-        ("ENTER", self.setMark,
+        ("ENTER", self.interactiveSetMark,
          C_EDIT, "set the mark to the current seek position in the selected clip. Marks are saved on a per clip basis, and are used by various other editing commands."),
         ("TAB", self.switchHead,
          C_NAVIGATION, "exchange position of head and selected track. Can be used to switch to tracks and get back where you were quickly."),
