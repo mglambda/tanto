@@ -50,7 +50,7 @@ class TantoGui():
         maxTracks = yspace // size
         return maxTracks
         
-    def drawEverything(self, currentWorkspace, workspaces, lastMsg, currentTrack, tracks, override=None):
+    def drawEverything(self, currentWorkspace, workspaces, lastMsg, currentTrack, head, tracks, override=None):
             
             
         self.panel.get_container().clear()            
@@ -81,7 +81,7 @@ class TantoGui():
             else: # has to be i < a
                 self.windows[currentWorkspace] = moveWindow(-1, self.windows[currentWorkspace])
 
-        return self.drawTracks(currentTrack, tracks, y=ydelta)
+        return self.drawTracks(currentTrack, head, tracks, y=ydelta)
 
     def drawWorkspaces(self, currentWorkspace, workspaces, y=0):
         prev = None
@@ -116,7 +116,7 @@ class TantoGui():
         return y + label._rect.height + self.verticalSpace
     
     
-    def drawTracks(self, currentTrack, tracks, y=0):
+    def drawTracks(self, currentTrack, head, tracks, y=0):
         if tracks == []:
             return y
         
@@ -129,6 +129,12 @@ class TantoGui():
             track = tracks[k]
             if prev is not None:
                 y = y + prev._rect.height + self.verticalSpace
+
+
+            if track == head:
+                oid = ObjectID(class_id="@button", object_id="#head-track")
+            else:
+                oid = ObjectID(class_id="@button", object_id="#track")
                 
             prev = pygame_gui.elements.UIButton(
                 relative_rect=pygame.Rect((self.padding, y), (self.xres - self.padding, self.trackHeight)),
@@ -136,7 +142,7 @@ class TantoGui():
                 manager=self.manager,
                 starting_height=1,
                 container=self.panel,
-                object_id=ObjectID(class_id="@button", object_id="#track"))
+                object_id=oid)
             
             if k == currentTrack:
                 prev.select()
@@ -157,13 +163,18 @@ class TantoGui():
                 else:
                     txt = "clip " + str(i)
 
+
+                if (track == head) and (track.index == i):
+                    clipoid = ObjectID(class_id="@clip", object_id="#head-clip")                        
+                else:
+                    clipoid = ObjectID(class_id="@clip", object_id="#clip")                        
                 prevclip = pygame_gui.elements.UIButton(
                     relative_rect=pygame.Rect((clipx, clipy), ( self.clipWidth, self.clipHeight)),
                     text=txt,
                     manager=self.manager,
                     starting_height=2,
                     container=self.panel,
-                    object_id=ObjectID(class_id="@button", object_id="#clip"))
+                    object_id=clipoid)
 
                 if track.isLocked():
                     prevclip.disable()

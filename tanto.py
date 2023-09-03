@@ -353,7 +353,7 @@ class ViewState(object):
         override = None
         if self.isTextMode():
             override = self.textinput
-        self.ui.drawEverything(self.currentWorkspace, self.workspaces, self.lastMsg, self.currentTrack, self.tracks, override=override)
+        self.ui.drawEverything(self.currentWorkspace, self.workspaces, self.lastMsg, self.currentTrack, self.head, self.tracks, override=override)
 
 
         

@@ -103,7 +103,15 @@
              }
          }
 	 },
-
+	 "#head-track" :
+	 {
+         "colours":
+         {
+             "normal_border": "#FF0000",
+             "disabled_border": "gray",
+             "selected_border": "#FFff00"
+         }
+	 },
 	 "text_box" :
 	 {
          "colours":
@@ -149,7 +157,7 @@
              "shadow_width": "0"
          }
 	 },
-	 "#clip" :
+	 "@clip" :
 	 {
          "colours":
          {
@@ -177,6 +185,15 @@
              "text_vert_alignment_padding": "3"
 		 }
 	 },
+	 "#head-clip" :
+	 {
+         "colours":
+         {
+             "normal_border": "#FF0000",
+             "disabled_border": "#F05050",
+             "selected_border": "#FFff00"
+		 }
+	 },	 
 	 "#msg" :
 	 {
          "colours":
