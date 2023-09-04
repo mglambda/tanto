@@ -116,7 +116,8 @@ class ViewState(object):
         name = trackNameFromFile(file, "track " + str(len(self.tracks)))            
         self.newTrack(name=name, audioOnly=isAudioFile(file), temporary=False, file=file)
         track = self.getCurrentTrack()
-        track.insertFile(file)
+        track.loadVars(self.projectdir)
+        track.insertFile(file, override=True)
         track.left()
 
 

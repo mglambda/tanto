@@ -9,7 +9,6 @@ class Track(object):
     storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference".split(" ")
     def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None):
         self.file = file
-        self.dir = dir
         self.temporary = temporary
         self.parentAudioFactor = parentAudioFactor
         self.workspacePreference = workspacePreference
@@ -104,6 +103,9 @@ class Track(object):
 
         if self.temporary:
             w = "& " + w
+
+        if self.isLocked():
+            w = "%" + w
         return w
                 
 
@@ -155,7 +157,11 @@ class Track(object):
         return track
 
     def loadVars(self, projectdir):
-        dir = projectdir + "/" + self.name
+        if self.file:
+            dir = projectdir + "/." + os.path.basename(self.file)
+        else:
+            dir = projectdir + "/" + self.name
+
         if not(os.path.isdir(dir)):
             return
 
@@ -175,27 +181,20 @@ class Track(object):
         
     
     def storeVars(self, projectdir):
-        if self.file:
-            return
-        
         dir = self.assertDir(projectdir)
         for key in Track.storable:
             filename = "." + key
             f = open(dir + "/" + filename, "w")
             f.write(str(self.__dict__[key]))
             f.close()
-                             
-
-                 
             
-            
-    
     def save(self, projectdir):
+        self.temporary = False        
+        self.storeVars(projectdir)        
         if self.file:
             return
 
-        self.temporary = False
-        self.storeVars(projectdir)
+
         dir = self.assertDir(projectdir)
         for i in range(len(self.data)):
             clip = self.data[i]
@@ -207,8 +206,10 @@ class Track(object):
 
                 
     def assertDir(self, projectdir):
-        dir = projectdir + "/" + self.getName() + "/"
-
+        if self.file:
+            dir = projectdir + "/." + os.path.basename(self.file) + "/"
+        else:
+            dir = projectdir + "/" + self.getName() + "/"
 
         if os.path.isdir(dir):
             return dir
@@ -217,34 +218,12 @@ class Track(object):
             os.mkdir(dir)
             return dir
 
-        # try something nasty
-        self.dir = dir + "_"
-        return self.assertDir()
-        
-        
-    
-    
-                    
-                    
+        # assertion has failed
+        raise Exception("error in Track.assertDir: could not write to directory " + dir)
+
 
     
-                
-                
-                
-                
-            
-
-            
-
-
-
-
-            
-            
-
-        
-
-    def insertFile(self, file):
+    def insertFile(self, file, override=False):
         if isVideoFile(file):
             if self.isAudioOnly():
                 return
@@ -252,9 +231,12 @@ class Track(object):
         else:
             clip = AudioFileClip(file)
         setFilepath(clip, file)
-        self.insertClip(clip)
+        self.insertClip(clip, override=override)
 
-    def insertClip(self, clip, filepath=None):
+    def insertClip(self, clip, filepath=None, override=False):
+        if self.isLocked() and not(override):
+            raise Exception("Track.insertClip: Track " + self.getName() + " is locked.")
+        
         if self.isAudioOnly():
             if isVideoClip(clip):
                 return None
@@ -269,7 +251,11 @@ class Track(object):
         self.right()
             
             
-    def remove(self):
+    def remove(self, override=False):
+        if self.isLocked() and not(override):
+            raise Exception("Track.remove: Track " + self.getName() + " is locked.")
+
+        
         if (self.index is None) or (self.index >= len(self.data)):
             return
                          
