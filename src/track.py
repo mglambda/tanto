@@ -87,7 +87,7 @@ class Track(object):
 
 
     def getDisplayName(self):
-        w = self.getName()[:30]
+        w = self.getName()[:50]
 
         if self.hasParent():
             if self.getOffset() > 0:

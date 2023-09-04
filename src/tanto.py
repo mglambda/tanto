@@ -96,7 +96,7 @@ class ViewState(object):
             
 
     def loadDir(self, dir):
-        for file in glob.glob(dir + "/*"):
+        for file in sorted(glob.glob(dir + "/*"), key= lambda w: padZero(w)):
             if os.path.isdir(file):
                 nt = Track.fromDir(file)
                 nt.temporary = False
