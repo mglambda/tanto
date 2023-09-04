@@ -380,8 +380,12 @@ def getKeyRepresentation(event):
         if not(event.key in d):        
             keystring = pygame.key.name(event.key)
 
-    # FIXME: do shift?
-    
+    if event.key in d and (keys[K_LSHIFT] or keys[K_RSHIFT]):
+        # do shift, but only for special keys, normal letters just get capitalized
+        w += "SHIFT+"
+        if not(event.key in d):        
+            keystring = pygame.key.name(event.key)
+            
     return w + keystring
 
 

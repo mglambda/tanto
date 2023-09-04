@@ -60,12 +60,14 @@ class Track(object):
         while self.getCurrentTag() != first:
             self.nextTag()
 
-    def nextTag(self):
+    def nextTag(self, prev=False):
         tags = self.tags.get(self.index, [])
         if tags == []:
             return None
-
-        self.tags[self.index] = tags[1:] + tags[0:1]
+        if prev:
+            self.tags[self.index] = tags[-1:] + tags[0:-1]
+        else:
+            self.tags[self.index] = tags[1:] + tags[0:1]
         return self.tags[0]
         
     def removeTag(self, name):

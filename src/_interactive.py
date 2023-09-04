@@ -1108,6 +1108,10 @@ def addTag(self, useMark=False):
     if track is None:
         return "Need a track to add tag to."
 
+    if track.isLocked():
+        return "Cannot add tag: Track is locked."
+    
+    
     clip = track.get()
     if clip is None:
         return "Need a clip to add tag to."
@@ -1116,7 +1120,7 @@ def addTag(self, useMark=False):
         pos = getMark(clip)
     else:
         pos = getSeekPos(clip)
-
+        
     def nameCont(w):
         if w == "":
             self.tts.speak("Please enter a name for the tag.")
@@ -1129,12 +1133,32 @@ def addTag(self, useMark=False):
     self.enableTextMode(nameCont)
     return "Please enter a name for the tag at position " + showMark(pos) + "."
 
-def nextTag(self):
+def removeTag(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot delete tag: No track!"
+
+    if track.isLocked():
+        return "Cannot remove tag: Track is locked."
+    
+    clip = self.getCurrentClip()
+    if clip is None:
+        return "Cannot delete tag: No clip selected!"
+
+    tag = track.getCurrentTag()
+    if tag is None:
+        return "Cannot remove tag: No tag to remove."
+    
+    track.removeTag(tag.name)
+    return "Deleted tag " + tag.name + " at position " + showMark(pos)
+    
+
+def nextTag(self, prev=False):
     track = self.getCurrentTrack()
     if track is None:
         return "Cannot cycle tag without a track."
 
-    track.nextTag()
+    track.nextTag(prev=prev)
     return self.showTag()
 
 def showTag(self):
