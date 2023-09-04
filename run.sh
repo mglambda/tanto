@@ -1,2 +1,2 @@
 #!/bin/bash
-python ./tanto.py $@
+python ./src/tanto.py $@
