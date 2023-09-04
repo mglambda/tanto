@@ -4,12 +4,25 @@ from moviepy.editor import *
 from tanto_utility import *
 import copy
 
+class Tag(object):
+    def __init__(self, name="", pos=0):
+        self.name = name
+        self.pos = pos
+
+    def __str__(self):
+        return "Tag(name='" + self.name + "', pos=" + str(self.pos) + ")"
+
+    def __repr__(self):
+        return str(self)
+        
+
 class Track(object):
 
-    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference".split(" ")
-    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None):
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags".split(" ")
+    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}):
         self.file = file
         self.temporary = temporary
+        self.tags = tags
         self.parentAudioFactor = parentAudioFactor
         self.workspacePreference = workspacePreference
         self.locked = locked
@@ -30,6 +43,44 @@ class Track(object):
     def unlock(self):
         self.locked = False
 
+    def tag(self, name="", pos=0):
+        tag = Tag(name=name, pos=pos)
+        
+        if self.index is None:
+            # this is kind of special, like tagging the track itself
+            index = -1
+        else:
+            index = self.index
+
+        tags = self.tags.get(self.index, [])
+        self.tags[index] = sorted(tags + [tag], key=lambda t: t.pos)
+        if tags == []:
+            return
+        first = tags[0]
+        while self.getCurrentTag() != first:
+            self.nextTag()
+
+    def nextTag(self):
+        tags = self.tags.get(self.index, [])
+        if tags == []:
+            return None
+
+        self.tags[self.index] = tags[1:] + tags[0:1]
+        return self.tags[0]
+        
+    def removeTag(self, name):
+        tags = self.tags.get(self.index, [])
+        self.tags[index] = [t for t in tags if t.name != name]
+
+
+    def getCurrentTag(self):
+        tags = self.tags.get(self.index, [])
+        if tags == []:
+            return None
+        return tags[0]
+    
+                         
+        
     def getParentTrackName(self):
         if self.parent is None:
             return None
@@ -437,6 +488,7 @@ class Track(object):
 
     def clone(self):
         n = copy.copy(self)
+        n.unlock()
         n.data = []
         for clip in self.data:
             n.data.append(clip.subclip(0))

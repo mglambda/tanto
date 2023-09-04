@@ -1102,3 +1102,71 @@ def recordAudioClip(self):
         
     
 
+
+def addTag(self, useMark=False):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Need a track to add tag to."
+
+    clip = track.get()
+    if clip is None:
+        return "Need a clip to add tag to."
+
+    if useMark:
+        pos = getMark(clip)
+    else:
+        pos = getSeekPos(clip)
+
+    def nameCont(w):
+        if w == "":
+            self.tts.speak("Please enter a name for the tag.")
+            return False
+        track.tag(name=w, pos=pos)
+        self.cancelTextMode()
+        self.tts.speak("Tag added.")
+        return True
+
+    self.enableTextMode(nameCont)
+    return "Please enter a name for the tag at position " + showMark(pos) + "."
+
+def nextTag(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot cycle tag without a track."
+
+    track.nextTag()
+    return self.showTag()
+
+def showTag(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "No tag because there is no track!"
+
+    clip = self.getCurrentTrack()
+    if clip is None:
+        return "No tag because there is no clip!"
+
+    tag = track.getCurrentTag()
+    if tag is None:
+        return "No tags for clip."
+
+    return tag.name + " at " + showMark(tag.pos)
+    
+def seekTag(self, useMark=False):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot jump to tag without a track!"
+
+    clip = self.getCurrentClip()
+    if clip is None:
+        return "Cannot jump to tag without a clip!"
+
+    tag = track.getCurrentTag()
+    if tag is None:
+        return "Cannot jump: No tags for clip."
+
+    if useMark:
+        setMark(clip, tag.pos)
+        return "set mark to tag " + tag.name + " at position " + showMark(tag.pos)
+    self.seek(tag.pos)
+    return "seek to tag " + tag.name + " at position " + showMark(tag.pos)
