@@ -365,9 +365,9 @@ class Track(object):
         suppressions = []
         for i in range(0, len(self.data)):
             print("i: " + str(i))
-            print("fps " + str(self.data[i].fps))
-            print("audio fps " + str(self.data[i].audio.fps))            
-            print("curStart: " + str(curStart))
+            #print("fps " + str(self.data[i].fps))
+            #print("audio fps " + str(self.data[i].audio.fps))            
+            #print("curStart: " + str(curStart))
             if isAudioClip(self.data[i]):
                 aclips.append(self.data[i].with_start(curStart))
             else:
@@ -375,15 +375,15 @@ class Track(object):
             children = findFunc(self, i)
             for childTrack in children:
                 factor = childTrack.getParentAudioFactor()
-                print("childtrack " + childTrack.name[:5])
-                print("child fps " + str(childTrack.data[0].fps))                
-                print("factor " + str(factor))
-                print("offset " + str(childTrack.getOffset()))
-                print("duration " + str(childTrack.getDuration()))
+                #print("childtrack " + childTrack.name[:5])
+                #print("child fps " + str(childTrack.data[0].fps))                
+                #print("factor " + str(factor))
+                #print("offset " + str(childTrack.getOffset()))
+                #print("duration " + str(childTrack.getDuration()))
                 childstart = curStart+childTrack.getOffset()
                 childend = curStart+childTrack.getOffset()+childTrack.getDuration()
-                print(str(childstart))
-                print(str(childend))                
+                #print(str(childstart))
+                #print(str(childend))                
                 if not(factor is None):
                     #FIXME: assumming audio only
                     overlays += [clip.with_start(childstart) for clip in childTrack.data]

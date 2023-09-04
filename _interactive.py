@@ -1031,6 +1031,8 @@ def playPause(self, seekOnPause=False):
     audio_buffersize=3000
     audio_nbytes=2
     if isVideoClip(clip):
+        if clip.audio is None:
+            return "Clip has no audio."
         clip = clip.audio
 
     audiothread = threading.Thread(
@@ -1048,4 +1050,55 @@ def playPause(self, seekOnPause=False):
 
         
 
+
+def createTextClip(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        track = self.newTrack()
+        
+    clip1 = self.getCurrentClip()
+    sz = (1024, 768)    
+    if clip1 is not None:
+        if isVideoClip(clip1):
+            sz = clip1.size
+
+            
+    def cont(w):
+        clip = TextClip(text=w,
+                        font='Ariel',
+                        interline=200,
+                        bg_color="black",
+                        color="white",
+                        size=sz,
+                        method="caption").with_duration(3)
+        track.insertClip(clip)
+        self.tts.speak("Created text clip.")
+        self.cancelTextMode()
+        return True
+
+
+    self.enableTextMode(cont)
+    return "Please enter text to be displayed in clip."
+
+def recordAudioClip(self):
+    if self.audiorecorder.isRecording():
+        clip = AudioFileClip(self.audiorecorder.stop())
+        track = self.getCurrentTrack()
+        if track is None:
+            track = newTrack()
+            msg = "Stopped audio recording and insrted onto new track."
+        else:
+            msg = "Stopped audio recording and inserted onto track."
+        track.insertClip(clip)
+        return msg
+
+    # this happens when we are not currently recording
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Please select or create a track."
+
+    self.audiorecorder.start()
+    return "Started recording. Hit r again to stop."
+        
+    
 

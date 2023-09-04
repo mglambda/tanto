@@ -47,7 +47,7 @@ def isAudioClip(clip):
     return isinstance(clip, AudioClip)
 
 def isVideoClip(clip):
-    return isinstance(clip, VideoClip)
+    return (isinstance(clip, VideoClip) or isinstance(clip, TextClip))
 
 
 def isAudioFile(filename):

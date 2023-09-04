@@ -151,7 +151,11 @@ def stdKeybindings(self=None):
         ("F", lambda: self.seekRelative(self.largeTimeStep),
          C_SEEK, "seek forward in the selected clip by a large amount."),
         ("B", lambda: self.seekRelative((-1)*self.largeTimeStep),
-         C_SEEK, "seek backward in the selected clip by a large amount.")
+         C_SEEK, "seek backward in the selected clip by a large amount."),
+        ("&", self.createTextClip,
+         C_EFFECT, "create a 3 second text clip based on text provided by user."),
+        ("r", self.recordAudioClip,
+         C_AUDIO, "record an audio clip and insert into selected track. repeating the command will stop the recording.")
          ]
 
 

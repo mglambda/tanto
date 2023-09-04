@@ -26,6 +26,7 @@ from moviepy.editor import *
 from speak import Speaker
 from track import Track
 from tanto_utility import *
+from tanto_audiorecorder import AudioRecorder
 from tanto_gui import *
 import _interactive
 import _keybindings
@@ -38,6 +39,7 @@ class ViewState(object):
         self.lastMsg = ""
         self.clock = pygame.time.Clock()
         self.textinput = textinput
+        self.audiorecorder = AudioRecorder()
         self.projectdir = projectdir
         self.running = True
         self.tts = tts
@@ -51,6 +53,8 @@ class ViewState(object):
         self.saveMark = None
         self.video_flag = threading.Event()
         self.audio_flag = threading.Event()
+        self.isRecordingAudio = False
+        self.audioData = None
 
         self.quietFactor = 0.2
         self.smallTimeStep = 1 # in seconds
