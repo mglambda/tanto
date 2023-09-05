@@ -132,7 +132,7 @@ class ViewState(object):
 
     def _putClipboard(self, clip):
         if self.clipboard is not None:
-            self.graveyard.insertClip(self.clipboard)
+            self.graveyard.insertClip(self.clipboard, override=True)
         self.clipboard = clip
         
     

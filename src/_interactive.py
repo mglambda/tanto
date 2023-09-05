@@ -309,7 +309,7 @@ def removeClip(self):
 
     clip = track.get()
     track.remove()
-    self.graveyard.insertClip(clip)
+    self.graveyard.insertClip(clip, override=True)
     return "Ok. Clip moved to graveyard."
 
 
@@ -363,6 +363,9 @@ def paste(self):
     track = self.getCurrentTrack()
     if track is None:
         return "No track to paste into! Maybe create a new one?"
+
+    if track.isLocked():
+        return "Cannot paste clip: Track is locked."
 
     track.insertClip(resetClipPositions(clip))
     return "Pasted clip with " + showMark(clip.duration) + " into " + track.getName()
@@ -438,6 +441,9 @@ def mixAudio(self, inPlace=False):
     track = self.head
     if track is None:
         return "Cannot mix audio. Head is not set."
+
+    if track.isLocked():
+        return "Cannot mix audio: Head track is locked." 
 
     target = track.get()
     if target is None:
@@ -568,6 +574,12 @@ def saveClip(self):
 
 def changeVolume(self, step):
     factor = 1.0 + step
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot change volume: No track selected."
+
+    if track.isLocked():
+        return "Cannot change volume: Track is locked."
 
     clip = self.getCurrentClip()
     if clip is None:
@@ -606,6 +618,13 @@ def changeVolume(self, step):
 
 
 def setVolume(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot set volume: No track selected."
+
+    if track.isLocked():
+        return "Cannot set volume: Track is locked."
+    
     clip = self.getCurrentClip()
     if clip is None:
         return "Sorry, must be on a clip to set its volume."
@@ -633,6 +652,10 @@ def createVoiceOver(self, file=False):
     if track is None:
         return "Sorry, please select a track or create one."
 
+    if track.isLocked():
+        return "Cannot create voice over: Track is locked."
+
+    
     clip = self.getCurrentClip()
     if clip is None:
         return "Sorry, no clip!"
@@ -652,6 +675,7 @@ def createVoiceOver2(self):
     if track is None:
         return "Cannot create voice over: No track selected."
 
+    
     clip = self.getCurrentClip()
     if clip is None:
         return "Cannot create voice over without a clip to speak over."
@@ -747,6 +771,10 @@ def createVoiceClip(self, cont=None):
         self.newTrack()
         track = self.getCurrentTrack()
 
+    if track.isLocked():
+        return "Cannot create voice message: Track is locked."
+
+        
     def handleVoiceMessage(w):
         clip = makeVoiceClip(w)
         track.insertClip(clip)
@@ -778,7 +806,9 @@ def copyToHead(self):
     track = self.head
     if track is None:
         return "Head is not set!"
-
+    if track.isLocked():
+        return "Cannot copy to head: Head track is locked."
+    
     track.insertClip(clip)
     return "Copied clip to " + track.getName()
 
