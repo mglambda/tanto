@@ -41,6 +41,13 @@ def renameTrack(self):
     return "Please enter a new name for the track. Enter to confirm, escape to exit."
 
 def resizeClip(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot resize clip: No track selected."
+
+    if track.isLocked():
+        return "Cannot resize clip: Track is locked."
+    
     clip = self.getCurrentClip()
     if clip is None:
         return "Need a clip to resize."
@@ -1159,14 +1166,14 @@ def createTextClip(self):
     track = self.getCurrentTrack()
     if track is None:
         track = self.newTrack()
-        
-    clip1 = self.getCurrentClip()
-    sz = (1024, 768)    
-    if clip1 is not None:
-        if isVideoClip(clip1):
-            sz = clip1.size
+        sz = (1024, 768)
+    else:
+        sz = track.getSize()
 
-            
+
+    if track.isLocked():
+        return "Cannot create text clip: Track is locked."
+    
     def cont(w):
         clip = TextClip(text=w,
                         font='Ariel',
