@@ -16,6 +16,9 @@ class Speaker(object):
 
 
     def speak(self, w):
+        if (w is None) or (w == ""):
+            return
+        
         Popen(["spd-say", "-m", self._punct, "-r", str(self._speed), w], stdin=PIPE)
         
 #    def speak(self, w):

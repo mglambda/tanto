@@ -302,6 +302,22 @@ class ViewState(object):
             return cont(n)
         return h
 
+    def makeIntHandler(self, cont):
+        def h(w):
+            if not(isInt(w)):
+                self.tts.speak("Sorry, invalid input. Please specify a valid, whole number.")
+                return False
+
+            try:
+                n = int(w)
+            except:
+                self.tts.speak("Sorry, invalid input. Please specify the silence duration in seconds.")
+                return False            
+
+            return cont(n)
+        return h
+
+    
         
     def isTextMode(self):
         return self.textmode
@@ -471,15 +487,18 @@ def main(argv):
                         logging.error(traceback.format_exc())
                         msg = "exception"
 
-                    st.updateUI()
+
                     if msg != st.specialOverrideMsg:
                         st.disableHeadOverride() # ctrl+j is for one command only
                     if msg:
-                        st.lastMsg = msg                        
+                        st.lastMsg = msg
+                        st.updateUI()                        
                         st.tts.speak(msg)
                         if not(st.isTextMode()):
                             textinput.value = msg
-
+                    else: # msg = ""
+                        st.updateUI()
+                    
             if event.type == QUIT:
                 st.quit()
 

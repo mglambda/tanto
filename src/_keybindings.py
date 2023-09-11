@@ -50,6 +50,8 @@ def stdKeybindings(self=None):
          C_EFFECT, "create a voice over with a text-to-speech program. Provided text is spoken on a new clip on a new linked track with offset of current mark. Use this effect for maximum convenience."),
         (";", self.renameTrack,
          C_TRACK, "rename the selected track."),
+        (":", self.resizeClip,
+         C_EDIT, "resize a clip. Prompts for width and height, one of which can be auto-determined to preserve aspect ratio."),        
         ("=", self.setVolume,
          C_AUDIO, "change the volume of the selected clip. Volume is scaled by a provided factor."),
         ("SPACE", self.playPause,

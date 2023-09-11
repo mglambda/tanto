@@ -18,14 +18,15 @@ class Tag(object):
 
 class Track(object):
 
-    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags".split(" ")
-    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}):
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size".split(" ")
+    def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}, size=None):
         self.file = file
         self.temporary = temporary
         self.tags = tags
         self.parentAudioFactor = parentAudioFactor
         self.workspacePreference = workspacePreference
         self.locked = locked
+        self.size = size
         self.offset = offset
         self.parent = parent
         self.name = name
@@ -93,6 +94,13 @@ class Track(object):
             return None
         return self.parent[1]
 
+    def getSize(self):
+        return self.size
+    
+    
+    def setSize(self, size):
+        self.size = size
+    
     def setParent(self, trackname, index):
         self.parent = (trackname, index)
         
@@ -296,6 +304,11 @@ class Track(object):
         # else  video, currently allowwing all clips
         if self.empty():
             self.data = [clip]
+            if isVideoClip(clip):
+                # track size is clip size if it's the only and the first clip
+                self.size = clip.size
+                
+                
             if isAudioClip(clip):
                 self.audioOnly = True
             self.index = 1
@@ -344,52 +357,6 @@ class Track(object):
         return sum([clip.duration for clip in self.data])
 
     
-    def recConcatenate2(self, findFunc=lambda trackname, trackindex: []):
-        if not(self.isMergable()):
-            return None
-
-        if self.empty():
-            return None
-
-        # we accumulate this tracks clips and child clips, setting start position according to offsets of subtracks. We do it like this because recursive calls to CompositeVideoClip etc are very inefficient
-        (aclips, vclips) = ([], [])
-        curStart = 0
-        for i in range(0, len(self.data)):
-            print("i: " + str(i))
-            print("fps " + str(self.data[i].fps))
-            print("curStart: " + str(curStart))
-            if isAudioClip(self.data[i]):
-                aclips.append(self.data[i].with_start(curStart))
-            else:
-                vclips.append(self.data[i].with_start(curStart))            
-            children = findFunc(self, i)
-            for childTrack in children:
-                factor = childTrack.getParentAudioFactor()
-                print("childtrack " + childTrack.name[:5])
-                print("factor " + str(factor))
-                print("offset " + str(childTrack.getOffset()))
-                print("duration " + str(childTrack.getDuration()))
-                if not(factor is None):
-                    aclips = [clip.multiply_volume(factor, start_time=curStart+childTrack.getOffset(), end_time=curStart+childTrack.getOffset()+childTrack.getDuration()) for clip in aclips]
-                    vclips = [clip.multiply_volume(factor, start_time=curStart+childTrack.getOffset(), end_time=curStart+childTrack.getOffset()+childTrack.getDuration()) for clip in vclips]
-                    
-                if childTrack.isAudioOnly():
-                    aclips += [clip.with_start(curStart + childTrack.getOffset()) for clip in childTrack.data]
-                else:
-                    vclips += [clip.with_start(curStart + childTrack.getOffset()) for clip in childTrack.data]
-                    
-
-            curStart += self.data[i].duration
-
-        if self.isAudioOnly():
-            return CompositeAudioClip(aclips + [clip.audio for clip in vclips])
-        # video track
-        video = CompositeVideoClip(vclips)
-        audio = CompositeAudioClip([video.audio] + aclips)
-        video.audio = audio
-        return video
-
-    
     def recConcatenate(self, findFunc=lambda trackname, trackindex: []):
         if not(self.isMergable()):
             return None
@@ -403,7 +370,7 @@ class Track(object):
         overlays = []
         suppressions = []
         for i in range(0, len(self.data)):
-            print("i: " + str(i))
+            #print("i: " + str(i))
             #print("fps " + str(self.data[i].fps))
             #print("audio fps " + str(self.data[i].audio.fps))            
             #print("curStart: " + str(curStart))
@@ -438,11 +405,14 @@ class Track(object):
         if self.isAudioOnly():
             return CompositeAudioClip(aclips + [clip.audio for clip in vclips])
         # video track
-#        for (factor, start, end) in suppressions:
-#            vclips = [clip.multiply_volume(factor, start, end) for clip in vclips]
-#            aclips = [clip.multiply_volume(factor, start, end) for clip in aclips]
-            
-        video = CompositeVideoClip(vclips)
+
+        # size of clips
+        if self.size:
+            # we just brutalize the clips, if you want to preserve aspect ratio, the user has to resize them manually before
+            resized_vclips = [clip.resize(new_size=self.size) for clip in vclips]
+    
+
+        video = CompositeVideoClip(resized_vclips)
         audio = CompositeAudioClip([video.audio] + aclips)
         for (factor, start, end) in suppressions:
             video = video.multiply_volume(factor, start_time=start, end_time=end)

@@ -40,6 +40,74 @@ def renameTrack(self):
     #        self.textinput.value = track.name                    
     return "Please enter a new name for the track. Enter to confirm, escape to exit."
 
+def resizeClip(self):
+    clip = self.getCurrentClip()
+    if clip is None:
+        return "Need a clip to resize."
+
+    if isAudioClip(clip):
+        return "Cannot resize: Clip is an audio clip!"
+
+    def mkCont2(width):
+        def cont2(w):
+            if (w != "") and not(isInt(w)):
+                self.tts.speak("Please enter a valid, whole number for the height.")
+                return False
+
+            if w == "":
+                height = None
+            else:
+                height = int(w)
+                if height < 0:
+                    self.tts.speak("Height can't be negative.")
+                    return False
+
+            # actual resizing, if we throw let's throw here
+            if (width is None) and (height is None):
+                self.tts.speak("Ok. Nothing resized.")
+                self.cancelTextMode()
+                return True
+            
+            if width is None:
+                newclip = clip.resize(height=height)
+            elif height is None:
+                newclip = clip.resize(width=width)
+            else:
+                newclip = clip.resize(new_size=(width, height))
+
+            track = self.getCurrentTrack()                
+            track.remove()
+            track.insertClip(newclip)
+            track.left()
+
+            self.cancelTextMode()
+            self.tts.speak("Successfully resized clip to " + str(newclip.size))
+            return True
+        return cont2
+            
+            
+        
+    
+    def cont1(w):
+        if (w != "") and not(isInt(w)):
+            self.tts.speak("Please enter a valid, whole number for the width.")
+            return False
+
+        if w == "":
+            width = None
+        else:
+            width = int(w)
+            if width < 0:
+                self.tts.speak("Width can't be negative.")
+                return False
+
+        self.tts.speak("Please enter the height of the new clip. Leave empty to determine automatically.")
+        self.enableTextMode(mkCont2(width))
+        return True
+    
+    self.enableTextMode(cont1)
+    return "Please enter a new width for the clip. Leave empty to automatically determine."
+        
 def keyInfo(self):
     self._tmpcmds = self.cmds.copy()
     def mkHelp(key):
@@ -985,6 +1053,12 @@ def whereAmI(self):
     if isVideoClip(clip):
         w += " *video*"
 
+        if track.size is not None:
+            w += "track size " + str(track.size)
+
+        if isVideoClip(clip):
+            w += " clip size " + str(clip.size)
+            
     return w
 
 def newTrack(self, name=None, audioOnly=False, temporary=True, file=None):
