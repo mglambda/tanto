@@ -1,5 +1,6 @@
 
-from tempfile import mkstemp
+import shutil
+from tempfile import mkstemp, mktemp
 from moviepy.editor import *
 from datetime import timedelta
 import random
@@ -104,17 +105,20 @@ def getExtension(file):
 
 def writeClip(clip, file):
     ext = getExtension(file)
+    tmpfile = mktemp() + "." + ext
+
     if ext == "mkv":
-        clip.write_videofile(file, codec="libx264")
-        return
+        clip.write_videofile(tmpfile, codec="libx264")
+    elif isVideoClip(clip):
+        clip.write_videofile(tmpfile)
+    elif isAudioClip(clip):
+        clip.write_audiofile(tmpfile)
 
-    if isVideoClip(clip):
-        clip.write_videofile(file)
-        return
+    # have to do it like this, since moviepy has a bug when you want to write to the same file that a clip is based on (causes freeze frame)
+    shutil.move(tmpfile, file)
 
-    if isAudioClip(clip):
-        clip.write_audiofile(file)
-        
+
+    
 
         
 

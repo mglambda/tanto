@@ -488,8 +488,9 @@ def main(argv):
 
 
         st.ui.manager.update(time_delta)
-        st.ui.manager.draw_ui(screen)            
         screen.fill(pygame.color.THECOLORS["black"])
+        st.ui.manager.draw_ui(screen)            
+
         pygame.display.update()
         
 
