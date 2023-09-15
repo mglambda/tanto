@@ -260,6 +260,12 @@ class Track(object):
         for i in range(len(self.data)):
             clip = self.data[i]
             # clip has no origin, was probably created during program execution
+            if not("fps" in clip.__dict__) or (clip.fps == None):
+                defaultfps = 24
+                print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
+                clip = clip.with_fps(30)
+           
+            
             if isVideoClip(clip):
                 writeClip(clip, dir + str(i) + ".mkv")
             else:

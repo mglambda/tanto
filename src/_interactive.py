@@ -627,6 +627,7 @@ def saveTrack(self):
 
 
 def saveClip(self):
+    #FIXME: is this function necessary? we mostly use track.save
     clip = self.getCurrentClip()
     if clip is None:
         return "No clip to save."
@@ -639,6 +640,11 @@ def saveClip(self):
         name = "unknown_clip"
 
     extension = ".mkv"
+    if not("fps" in clip.__dict__) or (clip.fps == None):
+        defaultfps = 24
+        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
+        clip = clip.with_fps(30)
+        
     clip.write_videofile(name+extension, codec="libx264")
     return "Ok. Wrote file " + name+extension
 
