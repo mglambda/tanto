@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/env python
 
 # Tanto - Terminal based Video and Audio editing tool
 
@@ -23,13 +23,13 @@ from pygame.locals import *
 enablePrint()
 
 from moviepy.editor import *
-from speak import Speaker
-from track import Track
-from tanto_utility import *
-from tanto_audiorecorder import AudioRecorder
-from tanto_gui import *
-import _interactive
-import _keybindings
+from tanto.speak import Speaker
+from tanto.track import Track
+from tanto.tanto_utility import *
+from tanto.tanto_audiorecorder import AudioRecorder
+from tanto.tanto_gui import *
+from tanto import _interactive
+from tanto import _keybindings
 
 TANTO_VERSION = "0.1.0"
 class ViewState(object):

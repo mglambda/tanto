@@ -1,0 +1,20 @@
+cffi==1.16.0
+decorator==5.1.1
+dev-moviepy==2.0.0.dev0
+imageio==2.33.1
+imageio-ffmpeg==0.4.9
+numpy==1.26.4
+pillow==10.2.0
+proglog==0.1.10
+PyAudio==0.2.14
+pycparser==2.21
+pygame==2.5.2
+pygame-ce==2.4.0
+pygame-gui==0.6.9
+pygame-textinput==1.0.1
+python-i18n==0.3.9
+sounddevice==0.4.6
+soundfile==0.12.1
+# Editable Git install with no remote (tanto==0.1.0)
+-e /home/marius/prog/tanto
+tqdm==4.66.2

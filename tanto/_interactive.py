@@ -2,8 +2,8 @@
 
 import sys, os, glob, threading, multiprocessing, time
 from types import MethodType
-from track import *
-from tanto_utility import *
+from tanto.track import *
+from tanto.tanto_utility import *
 import inspect
 import pygame_textinput
 

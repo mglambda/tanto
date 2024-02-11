@@ -1,5 +1,5 @@
 import os, sys
-from tanto_utility import *
+from tanto.tanto_utility import *
 
 # Disable print
 def blockPrint():

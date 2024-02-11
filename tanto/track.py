@@ -1,7 +1,7 @@
 
 import os, glob
 from moviepy.editor import *
-from tanto_utility import *
+from tanto.tanto_utility import *
 import copy
 
 class Tag(object):
