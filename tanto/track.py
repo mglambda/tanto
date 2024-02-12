@@ -18,7 +18,7 @@ class Tag(object):
 
 class Track(object):
 
-    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size".split(" ")
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size fadeDuration video_bitrate audio_bitrate".split(" ")
     def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}, size=None):
         self.file = file
         self.temporary = temporary
@@ -33,7 +33,11 @@ class Track(object):
         self.audioOnly = audioOnly
         self.data = []
         self.index = None
-        self.fadeDuration = 1.0
+        self.fadeDuration = 0.2
+        # sane defaults so we don't loose quality
+        self.video_bitrate = "8000k"
+        self.audio_bitrate = "50000k"
+        
 
     def isLocked(self):
         return self.locked
@@ -238,9 +242,6 @@ class Track(object):
                 self.__dict__[key] = tmp
                 
             
-            
-        
-    
     def storeVars(self, projectdir):
         dir = self.assertDir(projectdir)
         for key in Track.storable:
@@ -267,9 +268,12 @@ class Track(object):
            
             
             if isVideoClip(clip):
-                writeClip(clip, dir + str(i) + ".mkv")
+                writeClip(clip, dir + str(i) + ".mkv",
+                          bitrate=self.video_bitrate,
+                          audio_bitrate=self.audio_bitrate)
             else:
-                writeClip(clip, dir + str(i) + ".wav")
+                writeClip(clip, dir + str(i) + ".wav",
+                          bitrate=self.audio_bitrate)
 
                 
     def assertDir(self, projectdir):
@@ -295,8 +299,13 @@ class Track(object):
             if self.isAudioOnly():
                 return
             clip = VideoFileClip(file)
+            # moviepy has trouble detecting bitrate in mkv and webm format, which we default to
+            self.video_bitrate = getVideoBitrate(clip, file, default=self.video_bitrate)
+            self.audio_bitrate = getAudioBitrate(clip.audio, file, default=self.audio_bitrate)            
         else:
             clip = AudioFileClip(file)
+            self.audio_bitrate = getAudioBitrate(clip, file, default=self.audio_bitrate)            
+
         setFilepath(clip, file)
         self.insertClip(clip, override=override)
 
@@ -313,12 +322,23 @@ class Track(object):
             if isVideoClip(clip):
                 # track size is clip size if it's the only and the first clip
                 self.size = clip.size
-                
+                # other track parameters are defined by the first clip inserted
+                self.video_bitrate = getVideoBitrate(clip)
+                self.audio_bitrate = getAudioBitrate(clip)
                 
             if isAudioClip(clip):
                 self.audioOnly = True
+                self.audio_bitrate = getAudioBitrate(clip)
+                
             self.index = 1
             return
+
+        # more fixing of clip data, at this point it's not the first clip and the track knows it's bitrate
+        if isVideoClip(clip):
+            clip.bitrate = getVideoBitrate(clip, default=self.video_bitrate)
+            clip.audio.bitrate = getAudioBitrate(clip.audio, default=self.audio_bitrate)
+        else:
+            clip.bitrate = getAudioBitrate(clip, default=self.audio_bitrate)
         self.data.insert(self.index, clip)
         self.right()
             

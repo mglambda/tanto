@@ -272,11 +272,6 @@ def bisect(self, inPlace=False):
         w += "new track "
     return w + newTrack.getName()
 
-
-
-
-
-
 def createLinkTrack(self):
     clip = self.getCurrentClip()
     if clip is None:

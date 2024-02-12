@@ -103,16 +103,17 @@ def getExtension(file):
     return ws[-1]
 
 
-def writeClip(clip, file):
+def writeClip(clip, file, **kwargs):
     ext = getExtension(file)
     tmpfile = mktemp() + "." + ext
 
     if ext == "mkv":
-        clip.write_videofile(tmpfile, codec="libx264")
+        print(str(kwargs))
+        clip.write_videofile(tmpfile, codec="libx264", **kwargs)
     elif isVideoClip(clip):
-        clip.write_videofile(tmpfile)
+        clip.write_videofile(tmpfile, **kwargs)
     elif isAudioClip(clip):
-        clip.write_audiofile(tmpfile)
+        clip.write_audiofile(tmpfile, **kwargs)
 
     # have to do it like this, since moviepy has a bug when you want to write to the same file that a clip is based on (causes freeze frame)
     shutil.move(tmpfile, file)
@@ -129,6 +130,62 @@ nato_alphabet = "Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India
 name_delim = "-"
 
 
+def ensureBitrateString(x):
+    w = str(x)
+    if w.endswith("k"):
+        return w
+    return w+ "k"
+
+def getVideoBitrate(clip, file="", default="8000k"):
+    if isAudioClip(clip):
+        return default
+    
+    # moviepy has trouble getting bitrate for individual streams in mkv files. They do know the global bitrate though, which is usually correct-ish
+    # for other formats it might work though, so let's try
+    if "reader" not in clip.__dict__:
+        return default
+    
+    if clip.reader.bitrate is not None:
+        return ensureBitrateString(clip.reader.bitrate)
+
+    bitrate = None
+    if "video_bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["video_bitrate"]
+        
+    if "bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["bitrate"]
+
+    if bitrate is not None:
+        return ensureBitrateString(bitrate)
+
+    # FIXME: in the future we might use file to figure it out ourselves
+    return default
+
+def getAudioBitrate(clip, file="", default="50000k"):
+    if isVideoClip(clip):
+        clip = clip.audio
+
+        if "reader" not in clip.__dict__:
+            return default
+        
+    if clip.reader.bitrate is not None:
+        return ensureBitrateString(clip.reader.bitrate)
+
+    bitrate = None
+    if "bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["bitrate"]
+
+    if "audio_bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["audio_bitrate"]
+
+
+    if bitrate is not None:
+        return ensureBitrateString(bitrate)
+    # FIXME: in the future we might use file here    
+    return default
+    
+
+    
 def natoPrefixForLetter(w):
     if w == "":
         return ""
