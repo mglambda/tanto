@@ -383,7 +383,7 @@ class Track(object):
         return sum([clip.duration for clip in self.data])
 
     
-    def recConcatenate(self, findFunc=lambda trackname, trackindex: []):
+    def recConcatenate(self, findFunc=lambda trackname, trackindex: [], fade=False):
         if not(self.isMergable()):
             return None
 
@@ -395,15 +395,35 @@ class Track(object):
         curStart = 0
         overlays = []
         suppressions = []
+        if fade:
+            fadeOut = lambda c: c.fadeout(self.fadeDuration)
+            fadeIn = lambda c: c.fadein(self.fadeDuration)
+        else:
+            fadeIn = lambda x: x
+            fadeOut = lambda x: x 
+            
+
         for i in range(0, len(self.data)):
-            #print("i: " + str(i))
-            #print("fps " + str(self.data[i].fps))
-            #print("audio fps " + str(self.data[i].audio.fps))            
-            #print("curStart: " + str(curStart))
+            isFirst = i == 0
+            isLast = i == len(self.data) - 1
+            
             if isAudioClip(self.data[i]):
                 aclips.append(self.data[i].with_start(curStart))
+                if isFirst:
+                    aclips[-1] = fadeOut(aclips[-1])
+                elif isLast:
+                    aclips[-1] = fadeIn(aclips[-1])
+                else:
+                    aclips[-1] = fadeIn(fadeOut(aclips[-1])) 
             else:
-                vclips.append(self.data[i].with_start(curStart))            
+                vclips.append(self.data[i].with_start(curStart))
+                if isFirst:
+                    vclips[-1] = fadeOut(vclips[-1])
+                elif isLast:
+                    vclips[-1] = fadeIn(vclips[-1])
+                else:
+                    vclips[-1] = fadeIn(fadeOut(vclips[-1]))                 
+                
             children = findFunc(self, i)
             for childTrack in children:
                 factor = childTrack.getParentAudioFactor()
@@ -430,6 +450,8 @@ class Track(object):
 
         if self.isAudioOnly():
             return CompositeAudioClip(aclips + [clip.audio for clip in vclips])
+
+                
         # video track
 
         # size of clips

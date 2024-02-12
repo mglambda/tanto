@@ -84,7 +84,7 @@ def stdKeybindings(self=None):
          C_TRACK, "clone the selected track."),
         ("m", self.mergeTrack2,
          C_EDIT, "merge all clips in the selected track, and create a new track with the resulting clip. Will also mix linked tracks into the merge."),
-        ("M", lambda: self.mergeTrack(fade=True),
+        ("M", lambda: self.mergeTrack2(fade=True),
          C_EFFECT, "merge clips in track with a crossfade effect."),
         ("i", self.mixAudio,
          C_AUDIO, "mix the audio at current selection into the clip at head, but create a new resulting track without modifying existing clips."),

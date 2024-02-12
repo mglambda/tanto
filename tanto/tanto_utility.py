@@ -108,7 +108,6 @@ def writeClip(clip, file, **kwargs):
     tmpfile = mktemp() + "." + ext
 
     if ext == "mkv":
-        print(str(kwargs))
         clip.write_videofile(tmpfile, codec="libx264", **kwargs)
     elif isVideoClip(clip):
         clip.write_videofile(tmpfile, **kwargs)
@@ -165,8 +164,8 @@ def getAudioBitrate(clip, file="", default="50000k"):
     if isVideoClip(clip):
         clip = clip.audio
 
-        if "reader" not in clip.__dict__:
-            return default
+    if "reader" not in clip.__dict__:
+        return default
         
     if clip.reader.bitrate is not None:
         return ensureBitrateString(clip.reader.bitrate)

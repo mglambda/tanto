@@ -608,7 +608,7 @@ def mergeTrack2(self, fade=False):
 
     destinationTrack.name = self.makeSubTrackName(sourceTrack)
     clips = []
-    destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren))
+    destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren, fade=fade))
     return "Ok. Merged clips onto " + destinationTrack.getName()
 
 
