@@ -327,9 +327,9 @@ class ViewState(object):
         self.textinput.value = ""
         self.textmode = False
 
-    def enableTextMode(self, handler):
+    def enableTextMode(self, handler, default=""):
         self.handleText = handler
-        self.textinput.value = ""
+        self.textinput.value = str(default)
         self.textmode = True
 
     def getCurrentTrack(self):

@@ -608,8 +608,20 @@ def mergeTrack2(self, fade=False):
 
     destinationTrack.name = self.makeSubTrackName(sourceTrack)
     clips = []
-    destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren, fade=fade))
-    return "Ok. Merged clips onto " + destinationTrack.getName()
+
+    def cont(p):
+        if p < 0.0:
+            self.tts.speak("Can't merge with a negative fade duration. Please enter a positive floating point number for the fade duration.")
+            return False
+
+        sourceTrack.fadeDuration = p
+        destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren, fade=fade))
+        self.cancelTextMode()
+        self.tts.speak("Merged clips onto track " + destinationTrack.getName() + "with " + str(p) + " fade duration.")
+        return True
+
+    self.enableTextMode(self.makeFloatHandler(cont))
+    return "Please specify the fade duration as a floating point number."
 
 
 
