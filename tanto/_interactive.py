@@ -686,7 +686,7 @@ def changeVolume(self, step):
     tmp.insertClip(preclip)
     tmp.insertClip(sclip)
     tmp.insertClip(afterclip)
-    newClip = tmp.concatenate()
+    newClip = tmp.recConcatenate()
     if newClip is None:
         return "Oops. Couldn't change volume due to unknown error."
     setSeekPos(newClip, getSeekPos(clip))
