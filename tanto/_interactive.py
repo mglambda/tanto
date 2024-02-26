@@ -1325,3 +1325,48 @@ def seekTag(self, useMark=False):
         return "set mark to tag " + tag.name + " at position " + showMark(tag.pos)
     self.seek(tag.pos)
     return "seek to tag " + tag.name + " at position " + showMark(tag.pos)
+
+
+def fadeInEffect(self):
+    return _fadeEffect(self, direction="in")
+
+def fadeOutEffect(self):
+    return _fadeEffect(self, direction="out")
+
+def _fadeEffect(self, direction):
+    if direction == "out":
+        fade = lambda p, c: c.fadeout(p) if isVideoClip(c) else c.audio_fadeout(p)
+    elif direction == "in":
+        fade = lambda p, c: c.fadein(p) if isVideoClip(c) else c.audio_fadeout(p)    
+    else:
+        return "Cannot apply fade effect: nonsense direction provided."
+
+    clip = self.getCurrentClip()
+    if clip is None:
+        return "Cannot apply fade effect: No clip provided."
+
+    track = self.getCurrentTrack()
+
+    if track is None:
+        return "Cannot apply fade effect: No track found."
+
+
+    def cont(p):
+        if p < 0.0:
+            self.tts.speak("Can't apply fade effect with a negative fade duration. Please enter a positive floating point number for the fade duration.")
+            return False
+    
+        newTrack = self.makeCloneTrack(track)
+        newClip = newTrack.get()
+        newTrack.data[newTrack.index] = fade(p, newClip)
+        self.appendTrack(newTrack)
+        self.cancelTextMode()
+        self.tts.speak("Ok. Applied fade " + direction + " effect to clip on track " + newTrack.getName() + " .")
+        return True
+
+    self.enableTextMode(self.makeFloatHandler(cont))
+    return "Please specify the fade duration as a floating point number."
+
+
+    
+    

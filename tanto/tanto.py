@@ -521,8 +521,9 @@ def main(argv):
         
 
     # cleanup
-    if os.path.isfile(temporary_theme_file):
-        os.remove(temporary_theme_file)
+    if temporary_theme_file is not None and os.path.isfile(temporary_theme_file.name):
+        temporary_theme_file.close()
+        os.remove(temporary_theme_file.name)
     pygame.quit()
     sys.exit()
 
