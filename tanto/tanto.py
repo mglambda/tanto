@@ -30,6 +30,7 @@ from tanto.tanto_audiorecorder import AudioRecorder
 from tanto.tanto_gui import *
 from tanto import _interactive
 from tanto import _keybindings
+import tanto
 
 TANTO_VERSION = "0.1.0"
 class ViewState(object):
@@ -453,7 +454,13 @@ def main(argv):
         if os.path.isdir(argv[1]):
             projectdir = argv[1]
 
-    st = ViewState(tts=Speaker(), res=(xres, yres), ui=pygame_gui.UIManager((xres, yres), "theme.json"), projectdir=projectdir, textinput=textinput)     
+    #FIXME: allow user supplied theme
+    temporary_theme_file = mkTempThemeFile()
+    st = ViewState(tts=Speaker(),
+                   res=(xres, yres),
+                   ui=pygame_gui.UIManager((xres, yres), temporary_theme_file.name),
+                   projectdir=projectdir,
+                   textinput=textinput)     
     while st.running:
         time_delta = clock.tick(60)/1000.0
         events = pygame.event.get()
@@ -514,6 +521,8 @@ def main(argv):
         
 
     # cleanup
+    if os.path.isfile(temporary_theme_file):
+        os.remove(temporary_theme_file)
     pygame.quit()
     sys.exit()
 

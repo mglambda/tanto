@@ -1,11 +1,12 @@
 
 import shutil
-from tempfile import mkstemp, mktemp
+from tempfile import mkstemp, mktemp, NamedTemporaryFile
 from moviepy.editor import *
 from datetime import timedelta
-import random
+import random, json
 import subprocess
 import wave
+import tanto
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
@@ -368,4 +369,15 @@ def inWindow(n, window=(0,0)):
 def moveWindow(n, window):
     (a, b) = window
     return (a+n, b+n)
-    
+
+def mkTempThemeFile():
+    """Creates a temporary theme file with injected data/ locations. This can be used when user supplies no local theme.json. Returns the NamedTemporaryFile object of the created theme file."""
+    theme_string = open(tanto.get_tanto_data("theme.json"), "r").read()
+    # next line is confusing: we replace all ocurrences of e.g. fontfile = "data/blabla.font" with fontfile = "home/someuser/somenv/site/packageblabla/tanto/data/blabla.font"
+    # then load it as actual json
+    theme = json.loads(theme_string.replace('"data/', '"' + tanto.get_tanto_data("")))
+    f = NamedTemporaryFile("w", delete=False)
+    f.write(json.dumps(theme))
+    f.close()
+    return f
+                      
