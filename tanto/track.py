@@ -336,7 +336,8 @@ class Track(object):
         # more fixing of clip data, at this point it's not the first clip and the track knows it's bitrate
         if isVideoClip(clip):
             clip.bitrate = getVideoBitrate(clip, default=self.video_bitrate)
-            clip.audio.bitrate = getAudioBitrate(clip.audio, default=self.audio_bitrate)
+            if clip.audio is not None:
+                clip.audio.bitrate = getAudioBitrate(clip.audio, default=self.audio_bitrate)
         else:
             clip.bitrate = getAudioBitrate(clip, default=self.audio_bitrate)
         self.data.insert(self.index, clip)
@@ -396,8 +397,9 @@ class Track(object):
         overlays = []
         suppressions = []
         if fade:
-            fadeOut = lambda c: c.fadeout(self.fadeDuration)
-            fadeIn = lambda c: c.fadein(self.fadeDuration)
+            print("fade:" + str(self.fadeDuration))
+            fadeOut = lambda c, self=self: c.fadeout(self.fadeDuration) if isVideoClip(c) else c.audio_fadeout(self.fadeDuration)
+            fadeIn = lambda c, self=self: c.fadein(self.fadeDuration) if isVideoClip(c) else c.audio_fadeout(self.fadeDuration)
         else:
             fadeIn = lambda x: x
             fadeOut = lambda x: x 
@@ -416,13 +418,18 @@ class Track(object):
                 else:
                     aclips[-1] = fadeIn(fadeOut(aclips[-1])) 
             else:
+                print("video fade")
                 vclips.append(self.data[i].with_start(curStart))
                 if isFirst:
                     vclips[-1] = fadeOut(vclips[-1])
+                    vclips[-1].audio = fadeOut(vclips[-1].audio)                    
                 elif isLast:
+                    print("last: " + str(i))
                     vclips[-1] = fadeIn(vclips[-1])
+                    vclips[-1].audio = fadeIn(vclips[-1].audio)                    
                 else:
                     vclips[-1] = fadeIn(fadeOut(vclips[-1]))                 
+                    vclips[-1].audio = fadeIn(fadeOut(vclips[-1].audio))                 
                 
             children = findFunc(self, i)
             for childTrack in children:

@@ -620,9 +620,11 @@ def mergeTrack2(self, fade=False):
         self.tts.speak("Merged clips onto track " + destinationTrack.getName() + "with " + str(p) + " fade duration.")
         return True
 
-    self.enableTextMode(self.makeFloatHandler(cont))
-    return "Please specify the fade duration as a floating point number."
-
+    if fade:    
+        self.enableTextMode(self.makeFloatHandler(cont))
+        return "Please specify the fade duration as a floating point number."
+    destinationTrack.insertClip(sourceTrack.recConcatenate(self.findChildren, fade=fade))
+    return "Merged clips onto track " + destinationTrack.getName()
 
 
 def saveTrack(self):
@@ -1195,8 +1197,13 @@ def createTextClip(self):
                         color="white",
                         size=sz,
                         method="caption").with_duration(3)
-        track.insertClip(clip)
-        self.tts.speak("Created text clip.")
+        if clip is not None:
+            # FIXME: magic number fps
+            clip.fps = 30
+            track.insertClip(clip)
+            self.tts.speak("Created text clip.")
+        else:
+            self.tts.speak("Could not create text clip.")
         self.cancelTextMode()
         return True
 

@@ -161,9 +161,15 @@ def getVideoBitrate(clip, file="", default="8000k"):
     return default
 
 def getAudioBitrate(clip, file="", default="50000k"):
+   
     if isVideoClip(clip):
         clip = clip.audio
 
+
+    if clip is None:
+        # can happen on e.g. text clips
+        return default
+        
     if "reader" not in clip.__dict__:
         return default
         
