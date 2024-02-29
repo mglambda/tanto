@@ -7,50 +7,10 @@ import random, json
 import subprocess
 import wave
 import tanto
+from tanto.clip import *
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
-
-def getFilepath(clip):
-    if not("filepath" in clip.__dict__):
-        return None
-    return clip.filepath
-
-def setFilepath(clip, filepath):
-    clip.filepath = filepath
-    
-def getSeekPos(clip):
-    if not("seekpos" in clip.__dict__):
-        return 0
-    return clip.seekpos
-
-
-def setSeekPos(clip, pos):
-    clip.seekpos = pos
-    
-def getMark(clip):
-    if not("mark" in clip.__dict__):
-        return 0
-    return clip.mark
-
-def setMark(clip, mark):
-    clip.mark = mark
-
-def setChildTracks(clip, tracks):
-    clip.childTracks = tracks
-
-def getChildTracks(clip):
-    if "childTracks" in clip.__dict__:
-        return clip.childTracks
-    return []
-
-
-def isAudioClip(clip):
-    return isinstance(clip, AudioClip)
-
-def isVideoClip(clip):
-    return (isinstance(clip, VideoClip) or isinstance(clip, TextClip))
-
 
 def isAudioFile(filename):
     ws = filename.split(".")
@@ -60,11 +20,6 @@ def isAudioFile(filename):
 def isVideoFile(filename):
     return not(isAudioFile(filename))
 
-
-def getAudioClip(clip):
-    if isAudioClip(clip):
-        return clip
-    return clip.audio
 
 
 def makeCompositeAudioClip(clips, offset=0):
@@ -76,11 +31,6 @@ def makeCompositeAudioClip(clips, offset=0):
 
 
     return CompositeAudioClip(clips)
-
-def resetClipPositions(clip):
-    setSeekPos(clip, 0)
-    setMark(clip, 0)
-    return clip
 
     
 

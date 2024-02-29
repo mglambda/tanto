@@ -18,7 +18,7 @@ class Tag(object):
 
 class Track(object):
 
-    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size fadeDuration video_bitrate audio_bitrate".split(" ")
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size fadeDuration video_bitrate audio_bitrate file".split(" ")
     def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}, size=None):
         self.file = file
         self.temporary = temporary
@@ -39,6 +39,9 @@ class Track(object):
         self.audio_bitrate = "50000k"
         
 
+    def isFileTrack(self):
+        return self.file is not None
+    
     def isLocked(self):
         return self.locked
 
@@ -262,9 +265,9 @@ class Track(object):
             clip = self.data[i]
             # clip has no origin, was probably created during program execution
             if not("fps" in clip.__dict__) or (clip.fps == None):
-                defaultfps = 24
+                defaultfps = 30
                 print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
-                clip = clip.with_fps(30)
+                clip = clip.with_fps(defaultfps)
            
             
             if isVideoClip(clip):

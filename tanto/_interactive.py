@@ -4,6 +4,7 @@ import sys, os, glob, threading, multiprocessing, time
 from types import MethodType
 from tanto.track import *
 from tanto.tanto_utility import *
+from tanto.clip import *
 import inspect
 import pygame_textinput
 
@@ -251,8 +252,13 @@ def bisect(self, inPlace=False):
     if mark == 0 or mark >= clip.end:
         return "Nonsense mark position, nothing cut."
 
-    a = clip.subclip(0, mark)
-    b = clip.subclip(mark)
+    # new: if clip is a simple file, we want to use ffmpeg to cut to avoid reencoding and quality loss
+    if isFileClip(clip):
+        a = ffmpeg_subclip(clip, 0, mark)
+        b = ffmpeg_subclip(clip, mark)        
+    else:
+        a = clip.subclip(0, mark)
+        b = clip.subclip(mark)
     resetClipPositions(a)
     resetClipPositions(b)
 
@@ -1085,13 +1091,11 @@ def whereAmI(self):
 
 def newTrack(self, name=None, audioOnly=False, temporary=True, file=None):
     if name is None:
-        name = "track " + str(len(self.tracks))
+        name = "track-" + str(len(self.tracks))
 
     self.appendTrack(Track(name=name, audioOnly=audioOnly, temporary=temporary, file=file))
     self.currentTrack = len(self.tracks)-1
     return "Ok"
-
-
 
 def seekPercentage(self, p):
     clip = self.getCurrentClip()

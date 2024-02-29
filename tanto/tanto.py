@@ -30,6 +30,7 @@ from tanto.tanto_audiorecorder import AudioRecorder
 from tanto.tanto_gui import *
 from tanto import _interactive
 from tanto import _keybindings
+from tanto.clip import *
 import tanto
 
 TANTO_VERSION = "0.1.0"
@@ -524,6 +525,12 @@ def main(argv):
     if temporary_theme_file is not None and os.path.isfile(temporary_theme_file.name):
         temporary_theme_file.close()
         os.remove(temporary_theme_file.name)
+
+    for file in global_temp_clips:
+        if os.path.isfile(file):
+            os.remove(file)
+            
+        
     pygame.quit()
     sys.exit()
 
