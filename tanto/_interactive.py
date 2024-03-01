@@ -255,6 +255,8 @@ def bisect(self, inPlace=False):
 
     # new: if clip is a simple file, we want to use ffmpeg to cut to avoid reencoding and quality loss
     if isFileClip(clip):
+        # this can take a moment
+        self.tts.speak("Cutting clip...")
         a = ffmpeg_subclip(clip, 0, mark)
         b = ffmpeg_subclip(clip, mark)        
     else:
@@ -275,10 +277,12 @@ def bisect(self, inPlace=False):
     newTrack.remove()
     if not(inPlace):
         self.appendTrack(newTrack)
-    w = "Ok. cut clip onto "
-    if not(inPlace):
+        w = "Ok. cut clip onto "
         w += "new track "
-    return w + newTrack.getName()
+        return w + newTrack.getName()
+
+    # in place
+    return "Ok. bisected clip in track " + track.getName()
 
 def createLinkTrack(self):
     clip = self.getCurrentClip()
@@ -303,6 +307,10 @@ def setHead(self):
         return "No track selected."
     self.head = track
     return "Head is now at " + self.strHead()
+
+def unsetHead(self):
+    self.head = None
+    return "Cleared head."
 
 def toggleHeadOverride(self):
     self.headOverride = not(self.headOverride)
@@ -841,19 +849,23 @@ def createVoiceOver2(self):
     return "Please enter a text for the voice over."
 
 def createSilenceClip(self):
-    if self.head:
+
+    if self.head is not None:
         track = self.head
     else:
+        track = self.getCurrentTrack()
+        
+    if track is None:
         self.newTrack()
         track = self.getCurrentTrack()
-
+    
     def cont(n):
         if n <= 0:
             self.tts.speak("Please enter a positive, non-zero value.")
             return False
 
         track.insertClip(makeSilenceClip(n))
-        self.tts.speak("Ok. Created " + str(n) + " seconds of silence at head position.")
+        self.tts.speak("Ok. Created " + str(n) + " seconds of silence in clip " + str(track.index - 1) + " on track " + track.getName())
         self.cancelTextMode()
         return True
 
