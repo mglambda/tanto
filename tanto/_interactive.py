@@ -1224,19 +1224,29 @@ def createTextClip(self):
     return "Please enter text to be displayed in clip."
 
 def recordAudioClip(self):
+    # this command can be used to stop a recording that is in progress
     if self.audiorecorder.isRecording():
         clip = AudioFileClip(self.audiorecorder.stop())
-        track = self.getCurrentTrack()
-        if track is None:
-            track = newTrack()
-            msg = "Stopped audio recording and insrted onto new track."
+        if self.head is not None:
+            track = self.head
         else:
-            msg = "Stopped audio recording and inserted onto track."
+            track = self.getCurrentTrack()
+
+        if track is None or track.isLocked():
+            w = "Track is locked. " if track.isLocked() else ""            
+            self.newTrack()
+            track = self.getCurrentTrack()
+            msg = w + "Stopped audio recording and inserted onto new track " + track.getName()
+        else:
+            msg = "Stopped audio recording and inserted onto " + track.getName()
         track.insertClip(clip)
         return msg
 
     # this happens when we are not currently recording
-    track = self.getCurrentTrack()
+    if self.head is not None:
+        track = self.head
+    else:
+        track = self.getCurrentTrack()
     if track is None:
         return "Please select or create a track."
 
