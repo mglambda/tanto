@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 from subprocess import run
 from moviepy.editor import *
 from tanto.tanto_utility import *
+from tanto.definitions import *
 
 # I don't like the python tempfile architecture, it makes me do things like this
 
@@ -170,12 +171,11 @@ def getAudioBitrate(clip, file="", default="50000k"):
     
     
 
-def saveClip(clip, file):
+def saveClip(clip, file, video_bitrate=global_video_bitrate, audio_bitrate=global_audio_bitrate):
     """Save a given clip to a file with the provided path. If file doesn't have an extension (like .wav or .mkv), a default extension will be appended to the filename, depending on wether it is an audio or video clip."""
     if not("fps" in clip.__dict__) or (clip.fps == None):
-        defaultfps = 30
-        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
-        clip = clip.with_fps(defaultfps)
+        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(global_fps))
+        clip = clip.with_fps(global_fps)
 
     if clipfile := getFilepath(clip):
         # clip has a file associated with it. It's either temp, or an already existing file we don't want to touch
@@ -195,9 +195,9 @@ def saveClip(clip, file):
     if isVideoClip(clip):
         file1 = ensureExtension(file, default=".mkv")
         writeClip(clip, file1,
-                  bitrate=self.video_bitrate,
-                  audio_bitrate=self.audio_bitrate)
+                  bitrate=video_bitrate,
+                  audio_bitrate=audio_bitrate)
     else:
         file1 = ensureExtension(file, ".wav")
         writeClip(clip, file1,
-                  bitrate=self.audio_bitrate)
+                  bitrate=audio_bitrate)

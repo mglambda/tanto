@@ -36,8 +36,8 @@ class Track(object):
         self.index = None
         self.fadeDuration = 0.2
         # sane defaults so we don't loose quality
-        self.video_bitrate = "8000k"
-        self.audio_bitrate = "50000k"
+        self.video_bitrate = global_video_bitrate
+        self.audio_bitrate = global_audio_bitrate
         
 
     def isFileTrack(self):
@@ -263,7 +263,7 @@ class Track(object):
         dir = self.assertDir(projectdir)
         for i in range(len(self.data)):
             clip = self.data[i]
-            saveClip(clip, dir + str(i))
+            saveClip(clip, dir + str(i), video_bitrate=self.video_bitrate, audio_bitrate=self.audio_bitrate)
                 
     def assertDir(self, projectdir):
         if self.file:

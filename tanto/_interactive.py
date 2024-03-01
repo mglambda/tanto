@@ -5,6 +5,7 @@ from types import MethodType
 from tanto.track import *
 from tanto.tanto_utility import *
 from tanto.clip import *
+from tanto.definitions import *
 import inspect
 import pygame_textinput
 
@@ -657,9 +658,8 @@ def saveClip(self):
 
     extension = ".mkv"
     if not("fps" in clip.__dict__) or (clip.fps == None):
-        defaultfps = 24
-        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
-        clip = clip.with_fps(30)
+        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(global_fps))
+        clip = clip.with_fps(global_fps)
         
     clip.write_videofile(name+extension, codec="libx264")
     return "Ok. Wrote file " + name+extension
@@ -1157,7 +1157,6 @@ def playPause(self, seekOnPause=False):
 
     self.playseekpos = getSeekPos(clip) # this is only for seekOnPause
     clip = clip.subclip(getSeekPos(clip))
-    #fps=15
     audio_fps=22050
     audio_buffersize=3000
     audio_nbytes=2
@@ -1178,9 +1177,6 @@ def playPause(self, seekOnPause=False):
 
 
     return ""
-
-        
-
 
 def createTextClip(self):
     track = self.getCurrentTrack()
@@ -1203,8 +1199,7 @@ def createTextClip(self):
                         size=sz,
                         method="caption").with_duration(3)
         if clip is not None:
-            # FIXME: magic number fps
-            clip.fps = 30
+            clip.fps = global_fps
             track.insertClip(clip)
             self.tts.speak("Created text clip.")
         else:
