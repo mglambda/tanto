@@ -12,25 +12,36 @@ class Speaker(object):
         self.init(engine)
         
     def init(self, engine=None):
-        id = platform.system()
-        if id == "Linux":
-            # we it's 2024 for christ's sake, will use native spd-say
-            self._engine = "spd-say"
+        if engine is None or engine == "*platform*":
+            # pick for user
+            id = platform.system()
+            if id == "Linux":
+                # we it's 2024 for christ's sake, will use native spd-say
+                self._engine = "spd-say"
+            elif id == "Darwin":
+                # mac os
+                self._engine = "say"
+            elif id == "Windows":
+                # FIXME: look into sapi5
+                self._engine = "espeak"
+            else:
+                # here be dragons
+                raise RuntimeError("Sorry, TTS on your platform is not supported.")
+
+        # initialize sane values unless user picked others
+        if self._engine == "spd-say":
             self._rate = 40 if self._rate is None else self._rate
             self._volume = 0.7 if self._volume is None else self._volume
-        elif id == "Darwin":
-            # mac os
-            self._engine = "say"
+        elif self._engine == "espeak":
             self._rate = 150 if self._rate is None else self._rate
             self._volume = 100 if self._volume is None else self._volume
-        elif id == "Windows":
-            # FIXME: look into sapi5
-            self._engine = "espeak"
+        elif self._engine == "say":
             self._rate = 150 if self._rate is None else self._rate
             self._volume = 100 if self._volume is None else self._volume
         else:
-            # here be dragons
-            raise RuntimeError("Sorry, TTS on your platform is not supported.")
+            self._rate = 100
+            self._volume = 100
+
         
     def speak(self, w):
         if (w is None) or (w == ""):

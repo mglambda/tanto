@@ -436,7 +436,7 @@ def main():
         temporary_theme_file = mkTempThemeFile()
         themefile = temporary_theme_file.name
             
-    st = ViewState(tts=Speaker(rate=args.rate, volume=args.volume, egnine=args.engine),
+    st = ViewState(tts=Speaker(rate=args.rate, volume=args.volume, engine=args.engine),
                    res=(args.xres, args.yres),
                    ui=pygame_gui.UIManager((args.xres, args.yres), themefile),
                    projectdir=projectdir,
