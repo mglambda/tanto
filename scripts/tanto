@@ -3,4 +3,4 @@ import sys
 from tanto import tanto
 
 if __name__ == "__main__":        
-    tanto.main(sys.argv)
+    tanto.main()

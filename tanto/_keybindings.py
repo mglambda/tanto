@@ -18,6 +18,8 @@ def stdKeybindings(self=None):
     xs = [
         ("q", self.quit,
          C_PROGRAM, "quit without saving."),
+        ("F11", self.toggleFullscreen,
+         C_PROGRAM, "Toggle fullscreen mode."),        
         ("?", self.keyInfo,
          C_PROGRAM, "hit a key or key combo to hear its function."),
         ("Q", self.save,

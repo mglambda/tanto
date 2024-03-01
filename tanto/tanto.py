@@ -1,11 +1,8 @@
 #!/usr/bin/env python
-
-# Tanto - Terminal based Video and Audio editing tool
-
 import sys, os, glob, threading, multiprocessing, time
 import traceback
 import logging
-from unittest.mock import Mock
+
 
 # Disable print
 def blockPrint():
@@ -31,12 +28,14 @@ from tanto.tanto_gui import *
 from tanto import _interactive
 from tanto import _keybindings
 from tanto.clip import *
+from tanto.args import makeArgParser
 import tanto
 
 TANTO_VERSION = "0.1.0"
 class ViewState(object):
-    def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None):
+    def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None, args=None):
         self.debug = True
+        self.args = args
         self.ui = TantoGui(res=res, manager=ui)
         self.lastMsg = ""
         self.clock = pygame.time.Clock()
@@ -123,7 +122,8 @@ class ViewState(object):
         track.left()
 
 
-
+    def toggleFullscreen(self):
+        pygame.display.toggle_fullscreen()
         
     def save(self, file=None):
         pass
@@ -409,59 +409,39 @@ def getKeyRepresentation(event):
 
 
 
-def makeHelpText():
-    w = "tanto - lightweight, accessible audio and video editor\nversion " + TANTO_VERSION + "\n\n"
-    w += "Usage:\n  tanto /path/to/dir\nOpen tanto in directory, loading all files and tracks in the directory.\n tanto\nInvoked without argument, will assume the current directory to be the working directory.\n  tanto -h\nPrint this help.\n\ntanto doesn't work with project files. Tanto works with files and directories. You may want to create a 'project directory', by creating a new directory and copying video and audio files you wish to edit into it, then invoking tanto with the directory as argument.\n\nBelow is a list of keybindings and commands inside tanto.\n"
-    cats = _keybindings.categories
-    d = {c : [] for c in cats}
-    d[_keybindings.C_SEEK].append(("0-9", "Seek to position at nth-percentile of clip. So 1 jumps to 10%, 5 to 50% and so on. 0 is a synonym for CTRL+a."))
-    d[_keybindings.C_WORKSPACE].append(("F1 - F10", "Switch to workspace."))
-    d[_keybindings.C_WORKSPACE].append(("CTRL+0-9", "Send selected track to nth workspace. So CTRL+1 sends a track to workspace 1, accessible with F1, CTRL+5 workspace 5, and so on."))
-    for (key, f, c, v) in _keybindings.stdKeybindings(Mock()):
-        d[c].append((key, v))
-
-    for cat in cats:
-        w += "["+cat+"]\n"
-        indent = 10
-        for (key, desc) in d[cat]:
-            padding = " " * (indent - len(key))
-
-            w += "  " + key + padding + " - " + desc + "\n"
-        w += "\n"
-    return w
 
 
 
-def main(argv):
-    if len(argv) >= 2:
-        if (argv[1] == "-h") or (argv[1] == "--help"):
-            print(makeHelpText())
-            return
-    
-
-    (xres, yres) = (1024, 768)
-
+def main():
+    args = makeArgParser().parse_args()
     buffer = 2 * 2048
     freq=48000
     pygame.mixer.pre_init(frequency=freq, buffer=buffer)
     pygame.init()
     pygame.mixer.init(freq, -16, 2, buffer)    
-    screen = pygame.display.set_mode((xres,yres))
+    screen = pygame.display.set_mode((args.xres,args.yres))
     clock = pygame.time.Clock()
-    textinput = pygame_textinput.TextInputVisualizer()    
+    textinput = pygame_textinput.TextInputVisualizer()
+    if args.fullscreen:
+        pygame.display.toggle_fullscreen()
+    
     projectdir = None    
-    if len(argv) == 2:
-        
-        if os.path.isdir(argv[1]):
-            projectdir = argv[1]
+    if os.path.isdir(args.directory):
+        projectdir = args.directory
 
-    #FIXME: allow user supplied theme
-    temporary_theme_file = mkTempThemeFile()
-    st = ViewState(tts=Speaker(),
-                   res=(xres, yres),
-                   ui=pygame_gui.UIManager((xres, yres), temporary_theme_file.name),
+    temporary_theme_file = None            
+    if args.theme and os.path.isfile(args.theme):
+        themefile = args.theme
+    else:
+        temporary_theme_file = mkTempThemeFile()
+        themefile = temporary_theme_file.name
+            
+    st = ViewState(tts=Speaker(rate=args.rate, volume=args.volume, egnine=args.engine),
+                   res=(args.xres, args.yres),
+                   ui=pygame_gui.UIManager((args.xres, args.yres), themefile),
                    projectdir=projectdir,
-                   textinput=textinput)     
+                   textinput=textinput,
+                   args=args)     
     while st.running:
         time_delta = clock.tick(60)/1000.0
         events = pygame.event.get()
@@ -512,8 +492,6 @@ def main(argv):
 
             st.ui.manager.process_events(event)
 
-
-
         st.ui.manager.update(time_delta)
         screen.fill(pygame.color.THECOLORS["black"])
         st.ui.manager.draw_ui(screen)            
@@ -529,18 +507,8 @@ def main(argv):
     for file in global_temp_clips:
         if os.path.isfile(file):
             os.remove(file)
-            
-        
     pygame.quit()
     sys.exit()
 
-
-
-
 if __name__ == "__main__":        
-    main(sys.argv)
-
-
-    
-
-
+    main()
