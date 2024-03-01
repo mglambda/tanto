@@ -6,6 +6,7 @@ from datetime import timedelta
 import random, json
 import subprocess
 import wave
+import screeninfo
 import tanto
 
 def toTimecode(seconds):
@@ -293,3 +294,20 @@ def mkTempThemeFile():
 def printerr(w, **kwargs):
     print(w, file=sys.stderr, **kwargs)
 
+def guessScreenXY():
+    try:
+        xs = screeninfo.get_monitors()
+    except:
+        printerr("warning: Failed to determine screen info.")
+        xs = []
+        
+    if xs == []:
+        # lol, this might actually happen considering who might use this program. Just give out sane xy values for pygame
+        return (1024, 768)
+    
+    ys = list(filter(lambda x: x.is_primary == True, xs))
+    if ys == []:
+        x = xs[0]
+    else:
+        x = ys[0]
+    return (x.width, x.height)

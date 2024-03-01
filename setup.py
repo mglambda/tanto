@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 
-TANTO_VERSION='0.3.7'
+TANTO_VERSION='0.3.8'
 
 
 with open("README.md", "r", encoding="utf-8") as readme_file:
@@ -20,6 +20,6 @@ setup(
     license_files=["LICENSE"],
     scripts=["scripts/tanto"],
     packages=find_packages(include=['tanto']),
-    install_requires=["dev-moviepy", "pyaudio", "pygame", "pygame-gui", "pygame-textinput", "sounddevice", "soundfile"]
+    install_requires=["dev-moviepy", "pyaudio", "pygame", "pygame-gui", "pygame-textinput", "sounddevice", "soundfile", "screeninfo"]
 )
 

@@ -1,6 +1,7 @@
 import sys, os
 from unittest.mock import Mock
 from argparse import *
+from tanto.tanto_utility import *
 from tanto import _keybindings
 import tanto
 
@@ -34,13 +35,13 @@ def makeHelpText():
     return w
 
 def makeArgParser():
+    (x, y) = guessScreenXY()
     p = ArgumentParser(description= "Lightweight, speech empowered audio and video editor.",
-                       formatter_class=RawDescriptionHelpFormatter,
-                       epilog=makeHelpText())
+                       formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument("--version", action='version', version=mkVersion())
     p.add_argument("directory", type=str, nargs='?', default=".", help="Directory to edit audio and video files in. Tanto will consider this its project directory.")
-    p.add_argument("--xres", type=int, default=1024, help="X-Resolution for windowed mode.")
-    p.add_argument("--yres", type=int, default=768, help="Y-Resolution for windowed mode.")
+    p.add_argument("--xres", type=int, default=x, help="X-Resolution for windowed mode.")
+    p.add_argument("--yres", type=int, default=y, help="Y-Resolution for windowed mode.")
     p.add_argument("-r", "--rate", type=int, default=None, help="Rate of speech for the TTS engine. The exact impact of the value depends on the underlying engine used, but often it is words-per-minute.")
     p.add_argument("-e", "--engine", type=str, choices=["spd-say", "espeak", "say", "*platform*"], default="*platform*", help="The TTS engine used throughout the program. Only a limited set is supported currently. If you choose a particular one, make sure it is available on your platform. The default of *platform* will automatically pick an engine according to your operating system.")
     p.add_argument("-i", "--volume", type=str, default=None, help="Set the volume (or intensity) for the TTS engine.")

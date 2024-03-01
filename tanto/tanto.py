@@ -19,6 +19,7 @@ import pygame
 from pygame.locals import *
 enablePrint()
 
+import argparse
 from moviepy.editor import *
 from tanto.speak import Speaker
 from tanto.track import Track
@@ -28,7 +29,7 @@ from tanto.tanto_gui import *
 from tanto import _interactive
 from tanto import _keybindings
 from tanto.clip import *
-from tanto.args import makeArgParser
+from tanto.args import makeArgParser, makeHelpText
 import tanto
 
 
@@ -413,7 +414,14 @@ def getKeyRepresentation(event):
 
 
 def main():
-    args = makeArgParser().parse_args()
+    try:
+        args = makeArgParser().parse_args()
+    except SystemExit:
+        # epilog can be a bit wonky with argparse when it comes to formatting, so we do it ourselves
+        if "--help" in sys.argv or "-h" in sys.argv:
+            print(makeHelpText())
+        return
+        
     buffer = 2 * 2048
     freq=48000
     pygame.mixer.pre_init(frequency=freq, buffer=buffer)
