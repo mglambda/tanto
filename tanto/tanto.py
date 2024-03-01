@@ -31,7 +31,7 @@ from tanto.clip import *
 from tanto.args import makeArgParser
 import tanto
 
-TANTO_VERSION = "0.1.0"
+
 class ViewState(object):
     def __init__(self, res=(0,0), ui=None, tts=None, projectdir="./", textinput=None, args=None):
         self.debug = True

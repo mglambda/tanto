@@ -2,8 +2,16 @@ import sys, os
 from unittest.mock import Mock
 from argparse import *
 from tanto import _keybindings
+import tanto
 
-
+def mkVersion():
+    name = os.path.basename(sys.argv[0])
+    w = name + " v" + tanto.get_tanto_version() + "\n"
+    w += """Copyright (C) 2024 Marius Gerdes
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."""
+    return w
+    
 def makeHelpText():
     name = os.path.basename(sys.argv[0])
     w = name + " doesn't work with project files. " + name + " works with files and directories. You may want to create a 'project directory', by creating a new directory and copying video and audio files you wish to edit into it, then invoking " + name + " with the directory as argument.\n\nBelow is a list of keybindings and commands inside " + name + ".\n"
@@ -26,9 +34,10 @@ def makeHelpText():
     return w
 
 def makeArgParser():
-    p = ArgumentParser(description="lightweight, speech empowered audio and video editor",
+    p = ArgumentParser(description= "Lightweight, speech empowered audio and video editor.",
                        formatter_class=RawDescriptionHelpFormatter,
                        epilog=makeHelpText())
+    p.add_argument("--version", action='version', version=mkVersion())
     p.add_argument("directory", type=str, nargs='?', default=".", help="Directory to edit audio and video files in. Tanto will consider this its project directory.")
     p.add_argument("--xres", type=int, default=1024, help="X-Resolution for windowed mode.")
     p.add_argument("--yres", type=int, default=768, help="Y-Resolution for windowed mode.")
