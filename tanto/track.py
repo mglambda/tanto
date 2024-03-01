@@ -2,6 +2,7 @@
 import os, glob
 from moviepy.editor import *
 from tanto.tanto_utility import *
+from tanto.clip import *
 import copy
 
 class Tag(object):
@@ -259,25 +260,10 @@ class Track(object):
         if self.file:
             return
 
-
         dir = self.assertDir(projectdir)
         for i in range(len(self.data)):
             clip = self.data[i]
-            # clip has no origin, was probably created during program execution
-            if not("fps" in clip.__dict__) or (clip.fps == None):
-                defaultfps = 30
-                print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
-                clip = clip.with_fps(defaultfps)
-           
-            
-            if isVideoClip(clip):
-                writeClip(clip, dir + str(i) + ".mkv",
-                          bitrate=self.video_bitrate,
-                          audio_bitrate=self.audio_bitrate)
-            else:
-                writeClip(clip, dir + str(i) + ".wav",
-                          bitrate=self.audio_bitrate)
-
+            saveClip(clip, dir + str(i))
                 
     def assertDir(self, projectdir):
         if self.file:

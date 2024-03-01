@@ -1,7 +1,8 @@
-import os, subprocess
+import os, subprocess, shutil
 from tempfile import NamedTemporaryFile
 from subprocess import run
 from moviepy.editor import *
+from tanto.tanto_utility import *
 
 # I don't like the python tempfile architecture, it makes me do things like this
 
@@ -95,3 +96,108 @@ def ffmpeg_subclip(clip, start, end=None):
 
     setFilepath(out, f.name)
     return out
+
+
+
+def writeClip(clip, file, **kwargs):
+    ext = getExtension(file)
+    tmpfile = mktemp() + "." + ext
+
+    if ext == "mkv":
+        clip.write_videofile(tmpfile, codec="libx264", **kwargs)
+    elif isVideoClip(clip):
+        clip.write_videofile(tmpfile, **kwargs)
+    elif isAudioClip(clip):
+        clip.write_audiofile(tmpfile, **kwargs)
+
+    # have to do it like this, since moviepy has a bug when you want to write to the same file that a clip is based on (causes freeze frame)
+    shutil.move(tmpfile, file)
+
+
+def getVideoBitrate(clip, file="", default="8000k"):
+    if isAudioClip(clip):
+        return default
+    
+    # moviepy has trouble getting bitrate for individual streams in mkv files. They do know the global bitrate though, which is usually correct-ish
+    # for other formats it might work though, so let's try
+    if "reader" not in clip.__dict__:
+        return default
+    
+    if clip.reader.bitrate is not None:
+        return ensureBitrateString(clip.reader.bitrate)
+
+    bitrate = None
+    if "video_bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["video_bitrate"]
+        
+    if "bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["bitrate"]
+
+    if bitrate is not None:
+        return ensureBitrateString(bitrate)
+
+    # FIXME: in the future we might use file to figure it out ourselves
+    return default
+
+def getAudioBitrate(clip, file="", default="50000k"):
+   
+    if isVideoClip(clip):
+        clip = clip.audio
+
+
+    if clip is None:
+        # can happen on e.g. text clips
+        return default
+        
+    if "reader" not in clip.__dict__:
+        return default
+        
+    if clip.reader.bitrate is not None:
+        return ensureBitrateString(clip.reader.bitrate)
+
+    bitrate = None
+    if "bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["bitrate"]
+
+    if "audio_bitrate" in clip.reader.infos:
+        bitrate = clip.reader.infos["audio_bitrate"]
+
+
+    if bitrate is not None:
+        return ensureBitrateString(bitrate)
+    # FIXME: in the future we might use file here    
+    return default
+    
+    
+
+def saveClip(clip, file):
+    """Save a given clip to a file with the provided path. If file doesn't have an extension (like .wav or .mkv), a default extension will be appended to the filename, depending on wether it is an audio or video clip."""
+    if not("fps" in clip.__dict__) or (clip.fps == None):
+        defaultfps = 30
+        print("Warning in saveClip: clip has no fps set. Choosing default of " + str(defaultfps))
+        clip = clip.with_fps(defaultfps)
+
+    if clipfile := getFilepath(clip):
+        # clip has a file associated with it. It's either temp, or an already existing file we don't want to touch
+        if clipfile not in global_temp_clips:
+            printerr("warning in saveClip: Attempting to save file with write protected file path '" + clipfile + "'. Refusing to save.")
+            return
+
+        # there are many combinations here with extensions on file and clipfile. we simplify by just brutalizing the file and adding the tmpfile extension to whatever file was
+        # it might still be that tmpfile had no extension. That's a bug, but oh well. No easy way of determining audio/video on clipfile, so we default to mkv
+        (_, ext) = os.path.splitext(clipfile)
+        file1 = ensureExtension(file + ext, default=".mkv")
+        shutil.move(clipfile, file1)
+        global_temp_clips.remove(clipfile)
+        return
+
+    # clip has no origin, was probably created during program execution
+    if isVideoClip(clip):
+        file1 = ensureExtension(file, default=".mkv")
+        writeClip(clip, file1,
+                  bitrate=self.video_bitrate,
+                  audio_bitrate=self.audio_bitrate)
+    else:
+        file1 = ensureExtension(file, ".wav")
+        writeClip(clip, file1,
+                  bitrate=self.audio_bitrate)

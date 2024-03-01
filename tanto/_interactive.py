@@ -267,6 +267,7 @@ def bisect(self, inPlace=False):
         newTrack = track
     else:
         newTrack = self.makeCloneTrack(track)
+        newTrack.file = None
 
     newTrack.insertClip(a)
     newTrack.insertClip(b)

@@ -1,5 +1,5 @@
 
-import shutil
+import shutil, sys, os
 from tempfile import mkstemp, mktemp, NamedTemporaryFile
 from moviepy.editor import *
 from datetime import timedelta
@@ -7,7 +7,6 @@ import random, json
 import subprocess
 import wave
 import tanto
-from tanto.clip import *
 
 def toTimecode(seconds):
     return str(timedelta(seconds=seconds))
@@ -53,6 +52,11 @@ def getExtension(file):
     ws = file.split(".")
     return ws[-1]
 
+def ensureExtension(file, default=".mkv"):
+    (w, ext) = os.path.splitext(file)
+    if ext == "":
+        return w + default
+    return file
 
 def writeClip(clip, file, **kwargs):
     ext = getExtension(file)
@@ -85,61 +89,6 @@ def ensureBitrateString(x):
     if w.endswith("k"):
         return w
     return w+ "k"
-
-def getVideoBitrate(clip, file="", default="8000k"):
-    if isAudioClip(clip):
-        return default
-    
-    # moviepy has trouble getting bitrate for individual streams in mkv files. They do know the global bitrate though, which is usually correct-ish
-    # for other formats it might work though, so let's try
-    if "reader" not in clip.__dict__:
-        return default
-    
-    if clip.reader.bitrate is not None:
-        return ensureBitrateString(clip.reader.bitrate)
-
-    bitrate = None
-    if "video_bitrate" in clip.reader.infos:
-        bitrate = clip.reader.infos["video_bitrate"]
-        
-    if "bitrate" in clip.reader.infos:
-        bitrate = clip.reader.infos["bitrate"]
-
-    if bitrate is not None:
-        return ensureBitrateString(bitrate)
-
-    # FIXME: in the future we might use file to figure it out ourselves
-    return default
-
-def getAudioBitrate(clip, file="", default="50000k"):
-   
-    if isVideoClip(clip):
-        clip = clip.audio
-
-
-    if clip is None:
-        # can happen on e.g. text clips
-        return default
-        
-    if "reader" not in clip.__dict__:
-        return default
-        
-    if clip.reader.bitrate is not None:
-        return ensureBitrateString(clip.reader.bitrate)
-
-    bitrate = None
-    if "bitrate" in clip.reader.infos:
-        bitrate = clip.reader.infos["bitrate"]
-
-    if "audio_bitrate" in clip.reader.infos:
-        bitrate = clip.reader.infos["audio_bitrate"]
-
-
-    if bitrate is not None:
-        return ensureBitrateString(bitrate)
-    # FIXME: in the future we might use file here    
-    return default
-    
 
     
 def natoPrefixForLetter(w):
@@ -331,3 +280,7 @@ def mkTempThemeFile():
     f.close()
     return f
                       
+
+def printerr(w, **kwargs):
+    print(w, file=sys.stderr, **kwargs)
+
