@@ -38,18 +38,14 @@ def stdKeybindings(self=None):
          C_SEEK, "seek to the start of the current clip."),
         ("ALT+a", self.setMarkStart,
          C_EDIT, "set the mark to the start of the current clip."),
-        ('"', self.createVoiceClip,
-         C_EFFECT, "create a voice clip through text-to-speech and insert in the selected track."),
         ('(', self.fadeInEffect,
          C_EFFECT, "Apply a fade-in effect to the current clip and clone onto a new track."),
         (')', self.fadeOutEffect,
          C_EFFECT, "Apply a fade-out effect to the current clip and clone onto a new track."),        
         ("!", self.createSilenceClip,
          C_EFFECT, "create a clip of pure silence with provided duration and insert it in the selected track."),
-        ("§", self.createVoiceOver,
-         C_EFFECT, "alternative way to create a voice over from text-to-speech."),
-        ("$", lambda: self.createVoiceOver(file=True),
-         C_EFFECT, "create a voice over clip from a provided file and insert it in the selected track."),
+
+
         ("ALT+v", self.createVoiceOver2,
          C_EFFECT, "create a voice over with a text-to-speech program. Provided text is spoken on a new clip on a new linked track with offset of current mark. Use this effect for maximum convenience."),
         (";", self.renameTrack,
@@ -174,7 +170,7 @@ def stdKeybindings(self=None):
          C_SEEK, "seek forward in the selected clip by a large amount."),
         ("B", lambda: self.seekRelative((-1)*self.largeTimeStep),
          C_SEEK, "seek backward in the selected clip by a large amount."),
-        ("&", self.createTextClip,
+        ('"', self.createTextClip,
          C_EFFECT, "create a 3 second text clip based on text provided by user."),
         ("r", self.recordAudioClip,
          C_AUDIO, "record an audio clip and insert into selected track. repeating the command will stop the recording.")
@@ -183,3 +179,13 @@ def stdKeybindings(self=None):
 
 
     return xs
+
+
+
+# removed because of lack of quality/testing
+#        ('"', self.createVoiceClip,
+#         C_EFFECT, "create a voice clip through text-to-speech and insert in the selected track."),
+#        ("§", self.createVoiceOver,
+#          C_EFFECT, "alternative way to create a voice over from text-to-speech."),
+#        ("$", lambda: self.createVoiceOver(file=True),
+#         C_EFFECT, "create a voice over clip from a provided file and insert it in the selected track."),
