@@ -246,15 +246,24 @@ def partitionClips(clips):
     
         
 
+def truncateFloatString(w, n=2):
+    """Truncates a string like "0.00000002001" to a given number of decimals, e.g. "0.00" with n=2."""
+    if "." not in w:
+        return w
+    
+    ws = w.split(".")
+    ws[-1] = ws[-1][:n]
+    return ".".join(ws)
 
 def showMark(mark):
     if mark > 60 * 60:
-        return toTimecode(mark)    
+        return truncateFloatString(toTimecode(mark)    )
     if mark > 60:
-        ws = toTimecode(mark).split(":")
-        return ws[1] + ":" + ws[2]
-
-    return str(mark) + " seconds"    
+        ws = truncateFloatString(toTimecode(mark)).split(":")
+        mcount = "minute " if ws[1] == "01" else "minutes "
+        scount = "second" if ws[2] == "01" else "seconds"
+        return ws[1] + mcount + ws[2] + truncateFloatString(scount)
+    return truncateFloatString(str(mark)) + " seconds"    
 
 
 def padZero(w, num_zeroes=10):
