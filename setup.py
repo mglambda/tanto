@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 import os
 
 
-TANTO_VERSION='0.3.8'
+TANTO_VERSION='0.4.0'
 
 
 with open("README.md", "r", encoding="utf-8") as readme_file:

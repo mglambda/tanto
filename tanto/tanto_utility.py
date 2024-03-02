@@ -18,9 +18,14 @@ def isAudioFile(filename):
     return ws[-1].lower() in extensions
 
 def isVideoFile(filename):
-    return not(isAudioFile(filename))
+    (_, ext) = os.path.splitext(filename)
+    videos = ".mkv .avi .mp4 .webm .movd .wmv .avchd .flv".split(" ")
+    return ext.lower() in videos
 
-
+def isImageFile(filename):
+    (_, ext) = os.path.splitext(filename)
+    images = ".png .bmp .jpg .jpeg .svg .gif .tiff".split(" ")
+    return ext.lower() in images
 
 def makeCompositeAudioClip(clips, offset=0):
     if not(clips):

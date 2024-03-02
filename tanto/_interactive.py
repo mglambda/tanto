@@ -849,7 +849,6 @@ def createVoiceOver2(self):
     return "Please enter a text for the voice over."
 
 def createSilenceClip(self):
-
     if self.head is not None:
         track = self.head
     else:
@@ -872,6 +871,48 @@ def createSilenceClip(self):
     self.enableTextMode(self.makeFloatHandler(cont))
     return "Please enter the duration of silence in seconds. Enter to confirm, escape to cancel."
 
+def createImageClip(self):
+    track = self.getCurrentTrack()
+    if track is None:
+        return "Cannot create an image clip: No track selected."
+
+    if not(track.isImageTrack()):
+        return "Cannot create image clip: Please select an image track."
+    
+    # this one is freaky but oh well
+    if not(track.isFileTrack()):
+        return "Cannot create image clip: track has no file!"
+
+    # track is an image track and has a file
+    if self.head is None:
+        self.newTrack(name=self.makeSubTrackName(track))
+        destination = self.getCurrentTrack()
+        if destination is None:
+            return "Something went wrong."
+    else:
+        destination = self.head
+        
+    def cont(duration):
+        if duration <= 0:
+            self.tts.speak("Please specify a positive duration.")
+            return False
+
+        try:
+            clip = ImageClip(track.file, duration=duration)
+        except:
+            printerr(traceback.format_exc())
+            self.tts.speak("Couldn't create image clip: Clip creation failed. The image format may not be supported. Check the error log for more.")
+            self.cancelTextMode()
+            return True
+
+        destination.insertClip(clip)
+        self.tts.speak("Ok. Created " + showMark(duration) + " image clip on " + destination.getName())
+        self.cancelTextMode()
+        return True
+
+    self.enableTextMode(self.makeIntHandler(cont))
+    return "Please specify a duration for the image clip in seconds."
+    
 def createVoiceClip(self, cont=None):
     # get text input, then, make a voice over wav file, and add it to the current head position
     if self.head:
@@ -1392,3 +1433,4 @@ def _fadeEffect(self, direction):
 
     
     
+

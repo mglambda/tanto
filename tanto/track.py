@@ -19,9 +19,10 @@ class Tag(object):
 
 class Track(object):
 
-    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size fadeDuration video_bitrate audio_bitrate file".split(" ")
+    storable = "parent parentAudioFactor audioOnly index offset locked workspacePreference tags size fadeDuration video_bitrate audio_bitrate image file".split(" ")
     def __init__(self, file=None, name=None, audioOnly=False, locked=False, parent=None, offset=0, workspacePreference=1, temporary=True, parentAudioFactor=None, tags={}, size=None):
         self.file = file
+        self.image = False
         self.temporary = temporary
         self.tags = tags
         self.parentAudioFactor = parentAudioFactor
@@ -42,6 +43,8 @@ class Track(object):
 
     def isFileTrack(self):
         return self.file is not None
+    def isImageTrack(self):
+        return self.image
     
     def isLocked(self):
         return self.locked
@@ -166,7 +169,9 @@ class Track(object):
             
         if self.isAudioOnly():
             w += " *audio*"
-
+        if self.isImageTrack():
+            w += " *image*"
+            
         if self.file:
             w += " *file*"
 
@@ -291,9 +296,16 @@ class Track(object):
             # moviepy has trouble detecting bitrate in mkv and webm format, which we default to
             self.video_bitrate = getVideoBitrate(clip, file, default=self.video_bitrate)
             self.audio_bitrate = getAudioBitrate(clip.audio, file, default=self.audio_bitrate)            
-        else:
+        elif isAudioFile(file):
             clip = AudioFileClip(file)
-            self.audio_bitrate = getAudioBitrate(clip, file, default=self.audio_bitrate)            
+            self.audio_bitrate = getAudioBitrate(clip, file, default=self.audio_bitrate)
+        elif isImageFile(file):
+            self.image = True
+            self.lock()
+            return
+        else:
+            # some other file. Indicate that the file is recognized by letting the track exist, but add no clip so user can't do anything with it
+            return
 
         setFilepath(clip, file)
         self.insertClip(clip, override=override)

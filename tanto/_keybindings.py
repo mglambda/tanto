@@ -176,6 +176,8 @@ def stdKeybindings(self=None):
          C_SEEK, "seek backward in the selected clip by a large amount."),
         ('"', self.createTextClip,
          C_EFFECT, "create a 3 second text clip based on text provided by user."),
+        ("$", self.createImageClip,
+         C_EFFECT, "Create a clip with a still image for a specified duration."),
         ("r", self.recordAudioClip,
          C_AUDIO, "record an audio clip and insert into selected track. repeating the command will stop the recording.")
          ]
